@@ -1,42 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Jhierz Trading Journal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --text: #c9d1d9;
-      --positive: #00ff99;
-      --negative: #ff5555;
-      --accent: #00e0ff;
-      --border: #30363d;
-    }
 
-    * {
-      box-sizing: border-box;
+.glow-green {
+  color: #6b973f;
+  font-weight: bold;
+  text-shadow:
+    0 0 2px #061a09,
+    0 0 4px #7ff904,
+    0 0 6px #3aff3a,
+    0 0 8px #1de01d;
+}
+.yellow-text {
+  color: #00f400ed; /* bright readable yellow */
+  font-weight: ;
+}
+
+
+
+
+    :root {
+      --bg: #0e1a24;
+      --card: #050f17;
+      --text: #e7e3e3;
+      --green: #65f2b0;
+      --red: #b96e6e;
+      --border: #24561695;
+      --blue: #b4d6e9;
+      --accent: #b8e3ff;
     }
 
     body {
+      background-image: url('selena.jpg');
+       background-size: cover;         /* Full screen coverage */
+  background-position: center;    /* Center the image */
+  background-repeat: no-repeat;   /* Prevent tiling */
+  background-attachment: fixed; 
+  
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background-color: #051432;
       color: var(--text);
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
+    body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 15, 0.75); /* <--- this controls the darkness */
+  z-index: -1;
+}
 
-    h1 {
-      text-align: center;
-      padding: 0.5rem;
-      background: var(--card);
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background:  #061123;
+      padding: 1rem;
+      font-size: 1.2rem;
       color: var(--accent);
-      font-size: 1.5rem;
-      box-shadow: 0 0 5px var(--accent);
-      margin: 0;
+      text-shadow: 0 0 5px var(--accent);
+    }
+
+    header .center-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      flex-grow: 1;
     }
 
     .container {
@@ -46,19 +85,11 @@
     }
 
     .sidebar {
+      width: 250px;
       background: var(--card);
       padding: 1rem;
       overflow-y: auto;
-    }
-
-    .sidebar.left {
-      width: 250px;
       border-right: 1px solid var(--border);
-    }
-
-    .sidebar.right {
-      width: 250px;
-      border-left: 1px solid var(--border);
     }
 
     .main {
@@ -67,213 +98,603 @@
       overflow-y: auto;
     }
 
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0.5rem;
+    select, input, button {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      width: 100%;
+      border-radius: 4px;
     }
+
+    button {
+      cursor: pointer;
+      background-color: #1f3e52;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #275b75;
+    }
+
+    .calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px; /* was 4px */
+}
+.calendar td {
+  background-color: rgba(0, 0, 0, 0.1); /* very transparent dark tint */
+  border: 1px solid rgba(255, 255, 255, 0.04); /* subtle border */
+  color: #e0e0e0;
+  padding: 8px;
+  vertical-align: top;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+
+.calendar td:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* slightly brighter on hover */
+}
+.day strong {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.7rem;
+  color: #aaa;
+  opacity: 0.8;
+}
+
+ const today = new Date(); // Only call once
+  if (
+    year === today.getFullYear() &&
+    month === today.getMonth() &&
+    d === today.getDate()
+  ) {
+    div.classList.add("today");
+  }
+
+
 
     .day {
-      padding: 0.5rem;
-      border-radius: 8px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      min-height: 60px;
-      position: relative;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .day .pnl {
-      font-weight: bold;
-      margin-top: 0.25rem;
-      color: gold;
-    }
-
-    .positive {
-      color: var(--positive);
-    }
-
-    .negative {
-      color: var(--negative);
-    }
-
-.today {
-  border: 2px solid #6bff8c;
+  background: radial-gradient(circle at center, #102830, #0a1c24 80%);
+  padding: 4px; /* was 8px */
+  border: 3px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  min-height: 60px; /* was 80px */
   box-shadow:
-    0 0 5px #6bff8c,
-    0 0 10px #6bff8c,
-    0 0 15px #0f0;
-  z-index: 1;
-}
-.today strong {
-  color: #aaffcc;
-  text-shadow:
-    0 0 2px #00ff99,
-    0 0 4px #00ff99,
-    0 0 6px #00cc88;
+    inset 0 0 3px rgba(143, 143, 216, 0.76),
+    0 0 6px rgba(136, 204, 241, 0.3);
+  font-size: 0.75rem; /* slightly smaller text */
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 
+   .day.positive {
+  background: rgba(13, 66, 13, 0.777); /* dark green with transparency */
+  border: 2px solid rgba(0, 255, 128, 0.4); /* subtle green border */
+  box-shadow: inset 0 0 6px rgba(0, 255, 128, 0.2);
+}
 
-    #weeklySummary div {
-      margin-bottom: 1rem;
-      padding: 0.5rem;
+
+
+    .day.negative {
+      background: linear-gradient(to bottom right, rgba(212, 32, 32, 0.227), rgba(156, 7, 7, 0.904));
+      border: 3px double var(--red);
+      box-shadow:
+        0 0 8px var(--red),
+        inset 0 0 8px rgba(242, 119, 119, 0.5),
+        0 0 12px rgba(63, 9, 9, 0.3);
+    }
+
+    .day-header {
+  text-align: center;
+  font-weight: bold;
+  padding: 2px; /* was 4px */
+  background: var(--border);
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+    .week-summary {
+      margin-top: 1rem;
+      background: var(--card);
+      padding: 1rem;
       border-radius: 6px;
-      background: var(--bg);
-      box-shadow: inset 0 0 4px var(--border);
     }
 
-    #weeklySummary span {
-      font-weight: bold;
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
     }
+
+    .modal-content {
+      background: var(--card);
+      padding: 2rem;
+      border-radius: 8px;
+      width: 300px;
+    }
+
+.entry-symbol {
+  font-weight: bold;
+  font-size: 0.8rem;
+  display: inline-flex;    /* ← this makes the link appear beside */
+  align-items: center;
+  gap: 4px;
+}
+
+
+.entry-pnl {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #e6c76f;
+  text-shadow: 0 0 1px #e6c76f66;
+  margin-top: 1px;
+}
+
+
+
+ .entry-link {
+  font-size: 0.75rem;
+  color: var(--blue);      /* or pick your accent color */
+  text-decoration: none;
+
+
+      margin-top: 4px;
+      color: var(--blue);
+      text-decoration: underline;
+    }
+
+    .entry {
+      font-size: 0.85rem;
+    }
+
+    .overview {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--card);
+      border-radius: 6px;
+    }
+
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
 
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
       }
 
-      .sidebar.left,
-      .sidebar.right {
+      .sidebar {
         width: 100%;
-        border: none;
+        border-right: none;
         border-bottom: 1px solid var(--border);
+      }
+
+      header {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
       }
     }
   </style>
 </head>
 <body>
-  <h1>Jhierz Trading Journal</h1>
+
+ <header>
+  <div>💰 Start: $<span id="headerStartingBalance" class="yellow-text">0.00</span></div>
+  <div class="center-title">Jhierz Trading Journal</div>
+  <div>
+    📅 Monthly: 
+    <span id="headerMonthlyPnl" class="yellow-text">$0.00</span> 
+    (<span id="headerMonthlyGainPercent" class="yellow-text">0.00%</span>)
+    &nbsp;&nbsp;
+    📊 Balance: $<span id="headerCurrentBalance" class="yellow-text">0.00</span>
+  </div>
+</header>
+
+
+
   <div class="container">
-    <div class="sidebar left">
-      <h3>📁 Journals</h3>
+    <div class="sidebar">
+      <label>Journal</label>
       <div id="journalList"></div>
-      <h3>📅 Month/Year</h3>
-      <select id="yearSelect"></select>
-      <select id="monthSelect"></select>
-      <h3>💰 Starting Balance</h3>
-      <input type="number" id="startBalanceInput" />
+      <input id="newJournalName" placeholder="New journal name" />
+      <button onclick="addJournal()">Add Journal</button>
+      <button onclick="deleteJournal()">Delete Current</button>
+
+      <label>Year</label>
+      <select id="yearSelect" onchange="renderCalendar()"></select>
+
+      <label>Month</label>
+      <select id="monthSelect" onchange="renderCalendar()">
+        <option value="0">January</option>
+        <option value="1">February</option>
+        <option value="2">March</option>
+        <option value="3">April</option>
+        <option value="4">May</option>
+        <option value="5">June</option>
+        <option value="6">July</option>
+        <option value="7">August</option>
+        <option value="8">September</option>
+        <option value="9">October</option>
+        <option value="10">November</option>
+        <option value="11">December</option>
+      </select>
+
+      <label>Starting Balance</label>
+      <input id="startBalance" type="number" onchange="updateStartBalance()" />
+
+      <div class="overview" id="overviewStats"></div>
+
+      <button onclick="exportData()">📤 Export</button>
+      <input type="file" onchange="importData(event)" />
     </div>
 
     <div class="main">
       <div class="calendar" id="calendar"></div>
+      <div class="week-summary" id="weeklySummary"></div>
     </div>
+  </div>
 
-    <div class="sidebar right">
-      <h3>🗓 Weekly Summary</h3>
-      <div id="weeklySummary"></div>
+
+
+
+  
+  <div class="modal" id="entryModal">
+    <div class="modal-content">
+      <h3>Day Entry</h3>
+      <input id="entrySymbol" placeholder="Symbol" />
+      <input id="entryPnl" type="number" placeholder="PnL" />
+      <input id="entryTrades" type="number" placeholder="Trade Count" />
+      <input id="entryLink" placeholder="Link (optional)" />
+      <button onclick="saveEntry()">Save</button>
     </div>
   </div>
 
   <script>
     const calendar = document.getElementById('calendar');
-    const weeklySummary = document.getElementById('weeklySummary');
     const yearSelect = document.getElementById('yearSelect');
     const monthSelect = document.getElementById('monthSelect');
-    const startBalanceInput = document.getElementById('startBalanceInput');
+    const journalList = document.getElementById('journalList');
+    const startBalanceInput = document.getElementById('startBalance');
+    const overviewStats = document.getElementById('overviewStats');
+    const weeklySummary = document.getElementById('weeklySummary');
 
-    const journalData = {
-      default: {
-        '2025-08-01': { symbol: 'TSLA', pnl: 120, trades: 1 },
-        '2025-08-02': { symbol: 'AAPL', pnl: -50, trades: 2 },
-        '2025-08-05': { symbol: 'MSFT', pnl: 300, trades: 1 },
-        '2025-08-06': { symbol: 'NVDA', pnl: -20, trades: 1 },
-        '2025-08-08': { symbol: 'AMD', pnl: 150, trades: 3 },
-        '2025-08-10': { symbol: 'TSLA', pnl: -100, trades: 2 },
-        '2025-08-12': { symbol: 'AAPL', pnl: 200, trades: 1 },
-        '2025-08-14': { symbol: 'GOOG', pnl: -75, trades: 1 },
-        '2025-08-15': { symbol: 'NFLX', pnl: 50, trades: 1 }
-      }
-    };
+    let data = JSON.parse(localStorage.getItem("tradingData")) || {};
+    let currentJournal = Object.keys(data)[0] || "Main";
+    let selectedDate = null;
 
-    const activeJournal = 'default';
-
-    function renderCalendar() {
-      const year = parseInt(yearSelect.value);
-      const month = parseInt(monthSelect.value);
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const firstDay = new Date(year, month, 1).getDay();
-
-      calendar.innerHTML = '';
-      for (let i = 0; i < firstDay; i++) {
-        calendar.innerHTML += '<div></div>';
-      }
-
-      const entries = journalData[activeJournal] || {};
-      const startBal = parseFloat(startBalanceInput.value) || 0;
-
-      let weekPnL = 0, weekWin = 0, weekLoss = 0;
-      let summaries = [];
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(year, month, d);
-        const dayOfWeek = date.getDay();
-        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const entry = entries[dateKey] || {};
-        const pnl = parseFloat(entry.pnl || 0);
-
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'day';
-        dayDiv.innerHTML = `<div>${d}</div>`;
-        if (!isNaN(pnl)) {
-          const pnlClass = pnl > 0 ? 'positive' : 'negative';
-          dayDiv.innerHTML += `<div class="pnl ${pnlClass}">$${pnl.toFixed(2)}</div>`;
-        }
-
-        calendar.appendChild(dayDiv);
-
-        if (!isNaN(pnl)) {
-          weekPnL += pnl;
-          if (pnl > 0) weekWin++;
-          else if (pnl < 0) weekLoss++;
-        }
-
-        if (dayOfWeek === 6 || d === daysInMonth) {
-          let gainPct = (startBal && weekPnL !== 0) ? ((weekPnL / startBal) * 100).toFixed(2) : "0.00";
-          summaries.push(`
-            <div>
-              <div><b>Week ${summaries.length + 1}</b></div>
-              <div>Total PnL: <span class="${weekPnL >= 0 ? 'positive' : 'negative'}">$${weekPnL.toFixed(2)}</span></div>
-              <div>% Gain/Loss: <span class="${weekPnL >= 0 ? 'positive' : 'negative'}">${gainPct}%</span></div>
-              <div>Wins: ${weekWin} | Losses: ${weekLoss}</div>
-            </div>
-          `);
-          weekPnL = 0;
-          weekWin = 0;
-          weekLoss = 0;
-        }
-      }
-
-      weeklySummary.innerHTML = summaries.join('');
+    function saveData() {
+      localStorage.setItem("tradingData", JSON.stringify(data));
     }
 
+
+
+
+
+    
     function init() {
-      const now = new Date();
-      for (let y = 2020; y <= 2030; y++) {
-        const opt = document.createElement('option');
+      const year = new Date().getFullYear();
+      for (let y = year - 5; y <= year + 5; y++) {
+        let opt = document.createElement("option");
         opt.value = y;
-        opt.textContent = y;
-        if (y === now.getFullYear()) opt.selected = true;
+        opt.text = y;
         yearSelect.appendChild(opt);
       }
+      yearSelect.value = year;
+      monthSelect.value = new Date().getMonth();
+      updateJournalList();
+      
+      renderCalendar();
+    
+    }
 
-      for (let m = 0; m < 12; m++) {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = new Date(0, m).toLocaleString('default', { month: 'long' });
-        if (m === now.getMonth()) opt.selected = true;
-        monthSelect.appendChild(opt);
+
+    function updateJournalList() {
+      journalList.innerHTML = '';
+      Object.keys(data).forEach(journal => {
+        let btn = document.createElement("button");
+        btn.textContent = journal;
+        btn.onclick = () => {
+          currentJournal = journal;
+          startBalanceInput.value = data[currentJournal].start || 0;
+          renderCalendar();
+        };
+        journalList.appendChild(btn);
+      });
+      if (!data[currentJournal]) {
+        data[currentJournal] = { entries: {}, start: 0 };
+        saveData();
       }
+      startBalanceInput.value = data[currentJournal].start || 0;
+    }
 
-      startBalanceInput.value = 1000;
+    function addJournal() {
+      const name = document.getElementById("newJournalName").value.trim();
+      if (name && !data[name]) {
+        data[name] = { entries: {}, start: 0 };
+        currentJournal = name;
+        saveData();
+        updateJournalList();
+        renderCalendar();
+      }
+    }
 
-      yearSelect.addEventListener('change', renderCalendar);
-      monthSelect.addEventListener('change', renderCalendar);
-      startBalanceInput.addEventListener('input', renderCalendar);
+    function deleteJournal() {
+      if (confirm(`Delete journal '${currentJournal}'?`)) {
+        delete data[currentJournal];
+        currentJournal = Object.keys(data)[0] || "Main";
+        saveData();
+        updateJournalList();
+        renderCalendar();
+      }
+    }
 
+    function updateStartBalance() {
+      data[currentJournal].start = parseFloat(startBalanceInput.value) || 0;
+      saveData();
       renderCalendar();
     }
 
+    function renderCalendar() {
+      calendar.innerHTML = '';
+      weeklySummary.innerHTML = '';
+      const year = parseInt(yearSelect.value);
+      const month = parseInt(monthSelect.value);
+      const startDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const entries = data[currentJournal].entries || {};
+      const startBal = parseFloat(data[currentJournal].start || 0);
+
+      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      weekdays.forEach(day => {
+        const div = document.createElement("div");
+        div.className = "day-header";
+        div.textContent = day;
+        calendar.appendChild(div);
+      });
+      for (let d = 1; d <= daysInMonth; d++) {
+  const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const entry = entries[dateKey] || {};
+  const pnl = parseFloat(entry.pnl || 0);
+  const div = document.createElement("div");
+  div.className = "day";
+  const today = new Date();
+if (
+  year === today.getFullYear() &&
+  month === today.getMonth() &&
+  d === today.getDate()
+) {
+  div.classList.add("today");
+}
+
+
+
+      }
+
+      for (let i = 0; i < startDay; i++) {
+        calendar.appendChild(document.createElement("div"));
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const entry = entries[dateKey] || {};
+        const pnl = parseFloat(entry.pnl || 0);
+        const div = document.createElement("div");
+        div.className = "day";
+        if (entry.pnl > 0) div.classList.add("positive");
+        else if (entry.pnl < 0) div.classList.add("negative");
+
+        div.innerHTML = `<strong>${d}</strong>`;
+if (entry.symbol) {
+  div.innerHTML += `<div class="entry-symbol">${entry.symbol}`;
+
+  if (entry.link && entry.link.startsWith("http")) {
+    div.innerHTML += ` <a class="entry-link" href="${entry.link}" target="_blank">🔗</a>`;
+  }
+
+  div.innerHTML += `</div>`;
+  div.innerHTML += `<div class="entry-pnl">$${pnl.toFixed(2)}</div>`;
+}
+
+
+
+
+        if (!isNaN(startBal)) {
+          const percent = ((pnl / startBal) * 100).toFixed(2);
+          if (pnl !== 0) {
+            div.innerHTML += `<div class="${pnl > 0 ? 'positive' : 'negative'}">${percent}%</div>`;
+          }
+        }
+
+        div.onclick = () => {
+          selectedDate = dateKey;
+          document.getElementById("entrySymbol").value = entry.symbol || "";
+          document.getElementById("entryPnl").value = entry.pnl || "";
+          document.getElementById("entryTrades").value = entry.trades || "";
+          document.getElementById("entryLink").value = entry.link || "";
+          document.getElementById("entryModal").style.display = "flex";
+        };
+
+        calendar.appendChild(div);
+      }
+
+      renderOverview();
+    }
+
+    function saveEntry() {
+      const symbol = document.getElementById("entrySymbol").value;
+      const pnl = parseFloat(document.getElementById("entryPnl").value || 0);
+      const trades = parseInt(document.getElementById("entryTrades").value || 0);
+      const link = document.getElementById("entryLink").value;
+      data[currentJournal].entries[selectedDate] = { symbol, pnl, trades, link };
+      saveData();
+      document.getElementById("entryModal").style.display = "none";
+      renderCalendar();
+    }
+
+    window.onclick = (e) => {
+      if (e.target.id === "entryModal") {
+        document.getElementById("entryModal").style.display = "none";
+      }
+    };
+
+  
+    function renderOverview() {
+      const entries = Object.values(data[currentJournal].entries || {});
+      let totalTrades = 0, wins = 0, loss = 0, best = -Infinity, worst = Infinity, balance = data[currentJournal].start || 0;
+      entries.forEach(e => {
+        const pnl = parseFloat(e.pnl || 0);
+        if (!isNaN(pnl)) {
+          balance += pnl;
+          if (pnl > 0) wins++;
+          if (pnl < 0) loss++;
+          best = Math.max(best, pnl);
+          worst = Math.min(worst, pnl);
+          totalTrades += parseInt(e.trades || 0);
+            
+  
+         
+          function renderWeeklySummary() {
+  weeklySummary.innerHTML = '';
+  const entries = data[currentJournal].entries || {};
+  const year = parseInt(yearSelect.value);
+  const month = parseInt(monthSelect.value);
+  const startBal = parseFloat(data[currentJournal].start || 0);
+  if (isNaN(startBal)) return;
+
+  let weeklyPnL = 0;
+  let weekNumber = 1;
+  let weekStartDate = null;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dayOfWeek = date.getDay();
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const entry = entries[dateKey];
+    const pnl = parseFloat(entry?.pnl || 0);
+
+    if (dayOfWeek === 0 && weekStartDate !== null) {
+      // End of the week (Sunday), push summary
+      const percent = startBal > 0 ? ((weeklyPnL / startBal) * 100).toFixed(2) : '0.00';
+      const colorClass = weeklyPnL > 0 ? 'positive' : (weeklyPnL < 0 ? 'negative' : '');
+      weeklySummary.innerHTML += `
+        <div>
+          <b>Week ${weekNumber}:</b>
+          <span class="${colorClass}">$${weeklyPnL.toFixed(2)} (${percent}%)</span>
+        </div>
+      `;
+      weekNumber++;
+      weeklyPnL = 0;
+    }
+
+    if (weekStartDate === null) {
+      weekStartDate = date;
+    }
+
+    if (!isNaN(pnl)) {
+      weeklyPnL += pnl;
+    }
+
+    // Handle final week if it's the end of the month
+    if (d === daysInMonth) {
+      const percent = startBal > 0 ? ((weeklyPnL / startBal) * 100).toFixed(2) : '0.00';
+      const colorClass = weeklyPnL > 0 ? 'positive' : (weeklyPnL < 0 ? 'negative' : '');
+      weeklySummary.innerHTML += `
+        <div>
+          <b>Week ${weekNumber}:</b>
+          <span class="${colorClass}">$${weeklyPnL.toFixed(2)} (${percent}%)</span>
+        </div>
+      `;
+    }
+  }
+}
+renderWeeklySummary();
+
+        }
+      });
+     const winRate = wins + loss > 0 ? ((wins / (wins + loss)) * 100).toFixed(2) + '%' : '0%';
+  const balanceClass = balance >= data[currentJournal].start ? 'positive' : 'negative';
+  const bestClass = best >= 0 ? 'positive' : 'negative';
+  const worstClass = worst < 0 ? 'negative' : 'positive';
+
+  overviewStats.innerHTML = `
+    <div>📊 <b>Balance:</b> <span class="value ${balanceClass}">$${balance.toFixed(2)}</span></div>
+    <div>📈 <b>Total Trades:</b> <span class="value">${totalTrades}</span></div>
+    <div>✅ <b>Win Rate:</b> <span class="value">${winRate}</span></div>
+    <div>🏆 <b>Best Day:</b> <span class="value ${bestClass}">${best === -Infinity ? '-' : best}</span></div>
+    <div>💔 <b>Worst Day:</b> <span class="value ${worstClass}">${worst === Infinity ? '-' : worst}</span></div>
+      `;
+      updateHeaderBalances(data[currentJournal].start || 0, balance);
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "trading_journal.json";
+      a.click();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          data = JSON.parse(e.target.result);
+          currentJournal = Object.keys(data)[0];
+          saveData();
+          updateJournalList();
+          renderCalendar();
+        } catch (err) {
+          alert("Invalid JSON file");
+        }
+      };
+      reader.readAsText(file);
+    }
+    function updateHeaderBalances(startingBalance, currentBalance) {
+  const year = parseInt(yearSelect.value);
+  const month = parseInt(monthSelect.value);
+  const entries = data[currentJournal].entries || {};
+  let monthlyPnl = 0;
+
+  Object.entries(entries).forEach(([dateKey, entry]) => {
+    const [y, m] = dateKey.split('-').map(Number);
+    if (y === year && m === month + 1) {
+      const pnl = parseFloat(entry.pnl || 0);
+      if (!isNaN(pnl)) monthlyPnl += pnl;
+    }
+  });
+
+  const gainPercent = startingBalance > 0
+    ? ((monthlyPnl / startingBalance) * 100).toFixed(2)
+    : "0.00";
+
+  document.getElementById("headerStartingBalance").textContent = startingBalance.toFixed(2);
+  document.getElementById("headerCurrentBalance").textContent = currentBalance.toFixed(2);
+  document.getElementById("headerMonthlyPnl").textContent = `$${monthlyPnl.toFixed(2)}`;
+  document.getElementById("headerMonthlyGainPercent").textContent = `${gainPercent}%`;
+
+  const gainColor = monthlyPnl > 0 ? "lightgreen" : monthlyPnl < 0 ? "salmon" : "white";
+  document.getElementById("headerMonthlyPnl").style.color = gainColor;
+  document.getElementById("headerMonthlyGainPercent").style.color = gainColor;
+}
+
+
+    
     init();
   </script>
 </body>
