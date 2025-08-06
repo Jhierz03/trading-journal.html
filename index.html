@@ -7,17 +7,17 @@
   <style>
 
 .glow-green {
-  color: #78e110;
+  color: #6b973f;
   font-weight: bold;
   text-shadow:
-    0 0 2px #7CFC00,
+    0 0 2px #061a09,
     0 0 4px #7ff904,
     0 0 6px #3aff3a,
-    0 0 8px #3aff3a;
+    0 0 8px #1de01d;
 }
 .yellow-text {
-  color: #ffff33; /* bright readable yellow */
-  font-weight: bold;
+  color: #00f400ed; /* bright readable yellow */
+  font-weight: ;
 }
 
 
@@ -25,30 +25,46 @@
 
     :root {
       --bg: #0e1a24;
-      --card: #132a3c;
-      --text: #d9f0ff;
+      --card: #050f17;
+      --text: #e7e3e3;
       --green: #65f2b0;
-      --red: #f27777;
-      --border: #3b627e;
-      --blue: #88ccf1;
+      --red: #b96e6e;
+      --border: #24561695;
+      --blue: #b4d6e9;
       --accent: #b8e3ff;
     }
 
     body {
+      background-image: url('selena.jpg');
+       background-size: cover;         /* Full screen coverage */
+  background-position: center;    /* Center the image */
+  background-repeat: no-repeat;   /* Prevent tiling */
+  background-attachment: fixed; 
+  
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: var(--bg);
+      background-color: #051432;
       color: var(--text);
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
+    body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 15, 0.75); /* <--- this controls the darkness */
+  z-index: -1;
+}
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(to right, #1b3a4b, #275b75);
+      background:  #061123;
       padding: 1rem;
       font-size: 1.2rem;
       color: var(--accent);
@@ -107,10 +123,23 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 2px; /* was 4px */
 }
+..calendar td {
+  background-color: rgba(0, 0, 0, 0.1); /* very transparent dark tint */
+  border: 1px solid rgba(255, 255, 255, 0.04); /* subtle border */
+  color: #e0e0e0;
+  padding: 8px;
+  vertical-align: top;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
 
+
+.calendar td:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* slightly brighter on hover */
+}
 
     .day {
-  background: radial-gradient(circle at center, #1f3e52, #132a3c 80%);
+  background: radial-gradient(circle at center, #102830, #0a1c24 80%);
   padding: 4px; /* was 8px */
   border: 3px solid var(--border);
   border-radius: 8px;
@@ -118,31 +147,28 @@
   position: relative;
   min-height: 60px; /* was 80px */
   box-shadow:
-    inset 0 0 3px rgba(184, 227, 255, 0.3),
+    inset 0 0 3px rgba(143, 143, 216, 0.76),
     0 0 6px rgba(136, 204, 241, 0.3);
   font-size: 0.75rem; /* slightly smaller text */
   transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 
-    .day.positive {
-  background: linear-gradient(to bottom right, rgba(101, 242, 176, 0.2), rgba(0, 255, 128, 0.1));
-  border: 4px solid var(--green);
-  box-shadow:
-    0 0 12px var(--green),
-    0 0 16px var(--green),
-    0 0 20px var(--green),
-    inset 0 0 10px rgba(101, 242, 176, 0.6);
+   .day.positive {
+  background: rgba(13, 66, 13, 0.777); /* dark green with transparency */
+  border: 2px solid rgba(0, 255, 128, 0.4); /* subtle green border */
+  box-shadow: inset 0 0 6px rgba(0, 255, 128, 0.2);
 }
 
 
+
     .day.negative {
-      background: linear-gradient(to bottom right, rgba(242, 119, 119, 0.2), rgba(255, 0, 64, 0.1));
+      background: linear-gradient(to bottom right, rgba(212, 32, 32, 0.227), rgba(156, 7, 7, 0.904));
       border: 3px double var(--red);
       box-shadow:
         0 0 8px var(--red),
         inset 0 0 8px rgba(242, 119, 119, 0.5),
-        0 0 12px rgba(242, 119, 119, 0.3);
+        0 0 12px rgba(63, 9, 9, 0.3);
     }
 
     .day-header {
@@ -241,7 +267,13 @@
  <header>
   <div>💰 Start: $<span id="headerStartingBalance" class="yellow-text">0.00</span></div>
   <div class="center-title">Jhierz Trading Journal</div>
-  <div>📊 Balance: $<span id="headerCurrentBalance" class="yellow-text">0.00</span></div>
+  <div>
+    📅 Monthly: 
+    <span id="headerMonthlyPnl" class="yellow-text">$0.00</span> 
+    (<span id="headerMonthlyGainPercent" class="yellow-text">0.00%</span>)
+    &nbsp;&nbsp;
+    📊 Balance: $<span id="headerCurrentBalance" class="yellow-text">0.00</span>
+  </div>
 </header>
 
 
@@ -320,6 +352,11 @@
       localStorage.setItem("tradingData", JSON.stringify(data));
     }
 
+
+
+
+
+    
     function init() {
       const year = new Date().getFullYear();
       for (let y = year - 5; y <= year + 5; y++) {
@@ -476,6 +513,9 @@ if (entry.symbol) {
           best = Math.max(best, pnl);
           worst = Math.min(worst, pnl);
           totalTrades += parseInt(e.trades || 0);
+            
+  
+         
           function renderWeeklySummary() {
   weeklySummary.innerHTML = '';
   const entries = data[currentJournal].entries || {};
@@ -575,9 +615,38 @@ renderWeeklySummary();
       };
       reader.readAsText(file);
     }
+    function updateHeaderBalances(startingBalance, currentBalance) {
+  const year = parseInt(yearSelect.value);
+  const month = parseInt(monthSelect.value);
+  const entries = data[currentJournal].entries || {};
+  let monthlyPnl = 0;
+
+  Object.entries(entries).forEach(([dateKey, entry]) => {
+    const [y, m] = dateKey.split('-').map(Number);
+    if (y === year && m === month + 1) {
+      const pnl = parseFloat(entry.pnl || 0);
+      if (!isNaN(pnl)) monthlyPnl += pnl;
+    }
+  });
+
+  const gainPercent = startingBalance > 0
+    ? ((monthlyPnl / startingBalance) * 100).toFixed(2)
+    : "0.00";
+
+  document.getElementById("headerStartingBalance").textContent = startingBalance.toFixed(2);
+  document.getElementById("headerCurrentBalance").textContent = currentBalance.toFixed(2);
+  document.getElementById("headerMonthlyPnl").textContent = `$${monthlyPnl.toFixed(2)}`;
+  document.getElementById("headerMonthlyGainPercent").textContent = `${gainPercent}%`;
+
+  const gainColor = monthlyPnl > 0 ? "lightgreen" : monthlyPnl < 0 ? "salmon" : "white";
+  document.getElementById("headerMonthlyPnl").style.color = gainColor;
+  document.getElementById("headerMonthlyGainPercent").style.color = gainColor;
+}
+
 
     
     init();
   </script>
 </body>
 </html>
+
