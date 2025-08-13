@@ -1,25 +1,32 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jhierz Trading Journal</title>
+  <title>Jhierz Trading toggleJournals</title>
   <style>
     :root{
-      --bg:#0b1420; --card:#08111a; --text:#e7e3e3; --green:#65f2b0; --red:#ff8b8b;
-      --border:#234e2a80; --blue:#b4d6e9; --accent:#b8e3ff; --muted:#94a3b8;
+      --bg:#030910; --card:#0c0725; --text:#eee3e3; --green:#79ebb4; --red:#f90b0bd8;
+      --border:#e9f7eb80; --blue:#386885; --accent:#b8e3ff; --muted:#94a3b8;
     }
     *{box-sizing:border-box}
     body{
       margin:0; font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;
-      background:#051432; color:var(--text); display:flex; flex-direction:column; height:100vh;
+      background:#261d50; color:var(--text); display:flex; flex-direction:column; height:100vh;
       background-image:url('selena.jpg'); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed;
     }
-    body::before{content:""; position:fixed; inset:0; background:rgba(5,5,15,.78); z-index:-1}
+ body::before {
+  content:"";s
+  position:fixed;
+  inset:0;
+  background:rgba(117, 135, 179, 0.5); /* lighter overlay so image shows more */
+  z-index:-1;
+}
 
     header{display:flex; align-items:center; justify-content:space-between; gap:1rem; background:#061123; padding:1rem; color:var(--accent); text-shadow:0 0 5px var(--accent)}
     header .center-title{flex:1; text-align:center; font-weight:700; font-size:1.6rem}
-    .yellow-text{color:#c6ff7f}
+    .yellow-text{color:#12da3a}
 
     .container{display:flex; flex:1; min-height:0}
     .sidebar{width:280px; background:var(--card); padding:1rem; border-right:1px solid var(--border); overflow:auto}
@@ -27,7 +34,7 @@
 
     label{display:block; margin:.5rem 0 .25rem; color:var(--muted); font-size:.9rem}
     input,select,button{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:.55rem .6rem}
-    button{cursor:pointer; background:#1f3e52; transition:background .25s}
+    button{cursor:pointer; background:#094a2e; transition:background .25s}
     button:hover{background:#2a5f7b}
     .row{display:flex; gap:.5rem}
 
@@ -39,13 +46,24 @@
     #journalList button.active{outline:2px solid #52ffa8; background:#103443}
 
     .calendar{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
-    .day-header{background:#133046; color:#bcd2df; font-weight:700; text-align:center; padding:.4rem; border-radius:6px; font-size:.8rem}
-    .day{position:relative; min-height:78px; padding:6px 6px 8px; border-radius:10px; border:2px solid var(--border); background: rgba(4,8,12,0.85); /* slightly transparent day cell */ box-shadow:inset 0 0 4px rgba(140,190,240,.35)}
+   .day {
+  position:relative;
+  min-height:78px;
+  padding:6px 6px 8px;
+  border-radius:10px;
+  border:2px solid var(--border);
+  background:rgba(16,20,32,0.8); /* more transparent */
+  box-shadow:inset 0 0 4px rgba(140,190,240,.35);
+  overflow:hidden;
+  font-size:.8rem;
+}s
+
+    .day{position:relative; min-height:78px; padding:6px 6px 8px; border-radius:10px; border:2px solid var(--border); background:radial-gradient(60% 80% at 50% 0%, #102838, #0a1c24); box-shadow:inset 0 0 4px rgba(140,190,240,.35)}
     .day:hover{outline:2px solid rgba(184,227,255,.25)}
-    .day.positive{background:linear-gradient(180deg, rgba(16,50,32,0.85), rgba(7,29,19,0.85)); border-color:rgba(0,255,128,.35)}
-    .day.negative{background:linear-gradient(180deg, rgba(60,18,18,0.85), rgba(25,6,6,0.85)); border-color:#812e2e}
+    .day.positive{background:linear-gradient(180deg, rgba(16,50,32,.9), rgba(7,29,19,.95)); border-color:rgba(0,255,128,.35)}
+    .day.negative{background:linear-gradient(180deg, rgba(60,18,18,.8), rgba(25,6,6,.95)); border-color:#812e2e}
     .day strong{position:absolute; top:6px; right:8px; font-size:.72rem; color:#aab}
-    .today-ring{position:absolute; inset:-2px; border-radius:10px; border:2px dashed #86e5ff; pointer-events:none}
+    .today-ring{position:absolute; inset:-2px; border-radius:10px; border:2px dashed #bcd214; pointer-events:none}
 
     .entry-symbol{font-weight:700; font-size:.9rem; display:inline-flex; align-items:center; gap:6px}
     .entry-pnl{font-weight:700; margin-top:2px}
