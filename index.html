@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +16,13 @@
       background:#051432; color:var(--text); display:flex; flex-direction:column; height:100vh;
       background-image:url('selena.jpg'); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed;
     }
-    body::before{content:""; position:fixed; inset:0; background:rgba(5,5,15,.78); z-index:-1}
+ body::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(14,32,79,0.5); /* lighter overlay so image shows more */
+  z-index:-1;
+}
 
     header{display:flex; align-items:center; justify-content:space-between; gap:1rem; background:#061123; padding:1rem; color:var(--accent); text-shadow:0 0 5px var(--accent)}
     header .center-title{flex:1; text-align:center; font-weight:700; font-size:1.6rem}
@@ -39,11 +46,22 @@
     #journalList button.active{outline:2px solid #52ffa8; background:#103443}
 
     .calendar{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
-    .day-header{background:#133046; color:#bcd2df; font-weight:700; text-align:center; padding:.4rem; border-radius:6px; font-size:.8rem}
-    .day{position:relative; min-height:78px; padding:6px 6px 8px; border-radius:10px; border:2px solid var(--border); background: rgba(4,8,12,0.85); /* slightly transparent day cell */ box-shadow:inset 0 0 4px rgba(140,190,240,.35)}
+   .day {
+  position:relative;
+  min-height:78px;
+  padding:6px 6px 8px;
+  border-radius:10px;
+  border:2px solid var(--border);
+  background:rgba(16,20,32,0.8); /* more transparent */
+  box-shadow:inset 0 0 4px rgba(140,190,240,.35);
+  overflow:hidden;
+  font-size:.8rem;
+}s
+
+    .day{position:relative; min-height:78px; padding:6px 6px 8px; border-radius:10px; border:2px solid var(--border); background:radial-gradient(60% 80% at 50% 0%, #102838, #0a1c24); box-shadow:inset 0 0 4px rgba(140,190,240,.35)}
     .day:hover{outline:2px solid rgba(184,227,255,.25)}
-    .day.positive{background:linear-gradient(180deg, rgba(16,50,32,0.85), rgba(7,29,19,0.85)); border-color:rgba(0,255,128,.35)}
-    .day.negative{background:linear-gradient(180deg, rgba(60,18,18,0.85), rgba(25,6,6,0.85)); border-color:#812e2e}
+    .day.positive{background:linear-gradient(180deg, rgba(16,50,32,.9), rgba(7,29,19,.95)); border-color:rgba(0,255,128,.35)}
+    .day.negative{background:linear-gradient(180deg, rgba(60,18,18,.8), rgba(25,6,6,.95)); border-color:#812e2e}
     .day strong{position:absolute; top:6px; right:8px; font-size:.72rem; color:#aab}
     .today-ring{position:absolute; inset:-2px; border-radius:10px; border:2px dashed #86e5ff; pointer-events:none}
 
