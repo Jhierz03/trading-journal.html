@@ -4,20 +4,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jhierz Trading Journal</title>
+  <title>Jhierz Trading toggleJournals</title>
   <style>
     :root{
-      --bg:#020a14; --card:#0b1622; --text:#e7e3e3; --green:#438264; --red:#ff8b8b;
+      --bg:#030910; --card:#0c0725; --text:#eee3e3; --green:#79ebb4; --red:#f05129d8;
       --border:#e9f7eb80; --blue:#386885; --accent:#b8e3ff; --muted:#94a3b8;
+       --today-glow: hsla(68, 100%, 51%, 0.915);
     }
     *{box-sizing:border-box}
     body{
       margin:0; font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;
       background:#261d50; color:var(--text); display:flex; flex-direction:column; height:100vh;
-      background-image:url('selena.jpg'); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed;
+      background-image:url('ice.jpg'); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed;
     }
  body::before {
-  content:"";s
+  content:"";
   position:fixed;
   inset:0;
   background:rgba(117, 135, 179, 0.5); /* lighter overlay so image shows more */
@@ -26,7 +27,7 @@
 
     header{display:flex; align-items:center; justify-content:space-between; gap:1rem; background:#061123; padding:1rem; color:var(--accent); text-shadow:0 0 5px var(--accent)}
     header .center-title{flex:1; text-align:center; font-weight:700; font-size:1.6rem}
-    .yellow-text{color:#c6ff7f}
+    .yellow-text{color:#12da3a}
 
     .container{display:flex; flex:1; min-height:0}
     .sidebar{width:280px; background:var(--card); padding:1rem; border-right:1px solid var(--border); overflow:auto}
@@ -34,7 +35,7 @@
 
     label{display:block; margin:.5rem 0 .25rem; color:var(--muted); font-size:.9rem}
     input,select,button{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:.55rem .6rem}
-    button{cursor:pointer; background:#1f3e52; transition:background .25s}
+    button{cursor:pointer; background:#094a2e; transition:background .25s}
     button:hover{background:#2a5f7b}
     .row{display:flex; gap:.5rem}
 
@@ -54,16 +55,24 @@
   border:2px solid var(--border);
   background:rgba(16,20,32,0.8); /* more transparent */
   box-shadow:inset 0 0 4px rgba(140,190,240,.35);
-  overflow:hidden;
-  font-size:.8rem;
-}s
 
-    .day{position:relative; min-height:78px; padding:6px 6px 8px; border-radius:10px; border:2px solid var(--border); background:radial-gradient(60% 80% at 50% 0%, #102838, #0a1c24); box-shadow:inset 0 0 4px rgba(140,190,240,.35)}
+  font-size:.8rem;
+}
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 8px var(--today-glow), 0 0 16px var(--today-glow), 0 0 24px var(--today-glow);
+  }
+  100% {
+    box-shadow: 0 0 12px var(--today-glow), 0 0 24px var(--today-glow), 0 0 36px var(--today-glow);
+  }
+}
+
+    
     .day:hover{outline:2px solid rgba(184,227,255,.25)}
     .day.positive{background:linear-gradient(180deg, rgba(16,50,32,.9), rgba(7,29,19,.95)); border-color:rgba(0,255,128,.35)}
     .day.negative{background:linear-gradient(180deg, rgba(60,18,18,.8), rgba(25,6,6,.95)); border-color:#812e2e}
     .day strong{position:absolute; top:6px; right:8px; font-size:.72rem; color:#aab}
-    .today-ring{position:absolute; inset:-2px; border-radius:10px; border:2px dashed #86e5ff; pointer-events:none}
+   .today-ring { position:absolute; inset:-2px; border-radius:10px; border:2px solid var(--today-glow); box-shadow:0 0 8px var(--today-glow), 0 0 16px var(--today-glow), 0 0 24px var(--today-glow); pointer-events:none; animation: glow 1.5s infinite alternate; }
 
     .entry-symbol{font-weight:700; font-size:.9rem; display:inline-flex; align-items:center; gap:6px}
     .entry-pnl{font-weight:700; margin-top:2px}
@@ -503,3 +512,4 @@
   </script>
 </body>
 </html>
+
