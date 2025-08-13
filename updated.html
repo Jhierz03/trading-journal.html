@@ -59,8 +59,10 @@
     .week-summary .line:last-child{border-bottom:none}
 
     .modal{display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.6); align-items:center; justify-content:center}
-    .modal-content{width:320px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem}
+    .modal-content{width:360px; max-width:95%; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem}
     .modal-actions{display:flex; gap:.5rem}
+    .small-inputs{display:flex; gap:.5rem}
+    .small-inputs input{width:50%;}
 
     @media (max-width: 900px){
       .container{flex-direction:column}
@@ -132,7 +134,10 @@
       <h3 style="margin-top:0">Day Entry</h3>
       <input id="entrySymbol" placeholder="Symbol" />
       <input id="entryPnl" type="number" step="0.01" placeholder="PnL" />
-      <input id="entryTrades" type="number" placeholder="Trade Count" />
+      <div class="small-inputs">
+        <input id="entryWins" type="number" min="0" placeholder="Winning Trades" />
+        <input id="entryLosses" type="number" min="0" placeholder="Losing Trades" />
+      </div>
       <input id="entryLink" placeholder="Link (optional)" />
       <div class="modal-actions">
         <button onclick="saveEntry()">Save</button>
@@ -157,16 +162,42 @@
 
     function saveData(){ localStorage.setItem('tradingData', JSON.stringify(data)); }
 
+    function migrateJournalEntries(){
+      // Convert old 'trades' field into wins (assumption) if wins/losses not present
+      Object.keys(data).forEach(journal => {
+        const entries = data[journal].entries || {};
+        Object.keys(entries).forEach(dateKey => {
+          const e = entries[dateKey];
+          if(e){
+            // If wins/losses already exist, skip
+            if(('wins' in e) || ('losses' in e)) return;
+            if('trades' in e){
+              const t = parseInt(e.trades) || 0;
+              e.wins = t; e.losses = 0; delete e.trades; // migrate
+            } else {
+              // no trades field - default to 0/0
+              e.wins = e.wins || 0;
+              e.losses = e.losses || 0;
+            }
+          }
+        });
+      });
+      saveData();
+    }
+
     function init(){
       const now = new Date();
       const year = now.getFullYear();
-      // Year options (-5 to +5)
       for(let y=year-5; y<=year+5; y++){
         const opt = document.createElement('option');
         opt.value = y; opt.textContent = y; yearSelect.appendChild(opt);
       }
       yearSelect.value = year;
       monthSelect.value = now.getMonth();
+
+      if(Object.keys(data).length === 0){ data['Main'] = { entries:{}, start:0 }; }
+      // run migration to bring old data up to new schema
+      migrateJournalEntries();
 
       if(!data[currentJournal]){ data[currentJournal] = { entries:{}, start:0 }; }
       updateJournalList();
@@ -223,10 +254,11 @@
     function saveEntry(){
       const symbol = document.getElementById('entrySymbol').value.trim();
       const pnl = parseFloat(document.getElementById('entryPnl').value || 0);
-      const trades = parseInt(document.getElementById('entryTrades').value || 0);
+      const wins = parseInt(document.getElementById('entryWins').value) || 0;
+      const losses = parseInt(document.getElementById('entryLosses').value) || 0;
       const link = document.getElementById('entryLink').value.trim();
       if(!selectedDate) return;
-      data[currentJournal].entries[selectedDate] = { symbol, pnl, trades, link };
+      data[currentJournal].entries[selectedDate] = { symbol, pnl, wins, losses, link };
       saveData(); closeModal(); renderCalendar();
     }
 
@@ -282,9 +314,12 @@
         }
         cell.onclick = () => {
           selectedDate = dateKey;
+          const entry = data[currentJournal].entries[selectedDate] || {};
           document.getElementById('entrySymbol').value = entry.symbol || '';
           document.getElementById('entryPnl').value = (entry.pnl ?? '');
-          document.getElementById('entryTrades').value = (entry.trades ?? '');
+          // populate wins/losses (migration ensures fields exist)
+          document.getElementById('entryWins').value = (entry.wins ?? 0);
+          document.getElementById('entryLosses').value = (entry.losses ?? 0);
           document.getElementById('entryLink').value = entry.link || '';
           openModal();
         };
@@ -300,11 +335,17 @@
 
       entries.forEach(e=>{
         const pnl = parseFloat(e.pnl || 0);
-        if(isNaN(pnl)) return;
-        balance += pnl;
-        if(pnl>0) wins++; if(pnl<0) loss++;
-        if(pnl>best) best=pnl; if(pnl<worst) worst=pnl;
-        totalTrades += parseInt(e.trades || 0);
+        const w = parseInt(e.wins || 0);
+        const l = parseInt(e.losses || 0);
+        if(isNaN(pnl) && w===0 && l===0) return;
+        balance += isNaN(pnl)?0:pnl;
+        wins += isNaN(w)?0:w;
+        loss += isNaN(l)?0:l;
+        if(!isNaN(pnl)){
+          if(pnl>best) best=pnl;
+          if(pnl<worst) worst=pnl;
+        }
+        totalTrades += (isNaN(w)?0:w) + (isNaN(l)?0:l);
       });
 
       renderWeeklySummary();
@@ -317,7 +358,9 @@
       overviewStats.innerHTML = `
         <div>📊 <b>Balance:</b> <span class="${balanceClass}">$${balance.toFixed(2)}</span></div>
         <div>📈 <b>Total Trades:</b> <span>${totalTrades}</span></div>
-        <div>✅ <b>Win Rate:</b> <span>${winRate}</span></div>
+        <div>✅ <b>Winning Trades:</b> <span class="positive">${wins}</span></div>
+        <div>❌ <b>Losing Trades:</b> <span class="negative">${loss}</span></div>
+        <div>🏁 <b>Win Rate:</b> <span>${winRate}</span></div>
         <div>🏆 <b>Best Day:</b> <span class="${bestClass}">${best===-Infinity?'-':best}</span></div>
         <div>💔 <b>Worst Day:</b> <span class="${worstClass}">${worst===Infinity?'-':worst}</span></div>
       `;
@@ -351,8 +394,10 @@
         if(isWeekEnd || isMonthEnd){
           const pct = startBal? ((weekPnL/startBal)*100).toFixed(2):'0.00';
           const color = weekPnL>0? 'positive' : weekPnL<0? 'negative':'';
-          const label = isMonthEnd && !isWeekEnd ? `Week ${weekNo}` : `Week ${weekNo}`;
-          weeklySummary.innerHTML += `<div class="line"><span>${label}</span><span class="${color}">$${weekPnL.toFixed(2)} (${pct}%)</span></div>`;
+          const label = `Week ${weekNo}`;
+          const row = document.createElement('div'); row.className='line';
+          row.innerHTML = `<span>${label}</span><span class="${color}">$${weekPnL.toFixed(2)} (${pct}%)</span>`;
+          weeklySummary.appendChild(row);
           weekNo++; weekPnL = 0;
         }
       }
@@ -378,6 +423,29 @@
       const gainColor = monthlyPnl>0? 'lightgreen' : monthlyPnl<0? 'salmon' : '#e7e3e3';
       document.getElementById('headerMonthlyPnl').style.color = gainColor;
       document.getElementById('headerMonthlyGainPercent').style.color = gainColor;
+    }
+
+    // Export / Import
+    function exportData(){
+      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "trading_journal.json";
+      a.click();
+    }
+    function importData(event){
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try{
+          data = JSON.parse(e.target.result);
+          currentJournal = Object.keys(data)[0] || 'Main';
+          migrateJournalEntries();
+          saveData(); updateJournalList(); renderCalendar();
+        }catch(err){ alert('Invalid JSON file'); }
+      };
+      reader.readAsText(file);
     }
 
     init();
