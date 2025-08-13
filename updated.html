@@ -58,6 +58,12 @@
     .week-summary .line{display:flex; justify-content:space-between; padding:.25rem 0; font-size:.95rem; border-bottom:1px dashed #1f3b46}
     .week-summary .line:last-child{border-bottom:none}
 
+    /* compact weekly summary single-line chips */
+    .compact-weekly{display:flex; flex-wrap:wrap; gap:6px}
+    .compact-weekly .chip{padding:.35rem .6rem; border-radius:6px; background:linear-gradient(180deg,#06131a,#041018); border:1px solid rgba(255,255,255,0.03); font-size:.9rem}
+    .chip.positive{color:var(--green)}
+    .chip.negative{color:var(--red)}
+
     .modal{display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.6); align-items:center; justify-content:center}
     .modal-content{width:360px; max-width:95%; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem}
     .modal-actions{display:flex; gap:.5rem}
@@ -124,7 +130,10 @@
 
     <main class="main">
       <div class="calendar" id="calendar"></div>
-      <div class="week-summary" id="weeklySummary"></div>
+      <div class="week-summary" id="weeklySummary">
+        <!-- compact weekly chips will be injected here -->
+        <div id="compactWeekly" class="compact-weekly"></div>
+      </div>
     </main>
   </div>
 
@@ -155,6 +164,7 @@
     const startBalanceInput = document.getElementById('startBalance');
     const overviewStats = document.getElementById('overviewStats');
     const weeklySummary = document.getElementById('weeklySummary');
+    const compactWeekly = document.getElementById('compactWeekly');
 
     let data = JSON.parse(localStorage.getItem('tradingData')) || {};
     let currentJournal = Object.keys(data)[0] || 'Main';
@@ -163,22 +173,34 @@
     function saveData(){ localStorage.setItem('tradingData', JSON.stringify(data)); }
 
     function migrateJournalEntries(){
-      // Convert old 'trades' field into wins (assumption) if wins/losses not present
+      // Convert older shapes into {entries:{...}, start:...}
+      if(!data || typeof data !== 'object') data = {};
       Object.keys(data).forEach(journal => {
-        const entries = data[journal].entries || {};
-        Object.keys(entries).forEach(dateKey => {
-          const e = entries[dateKey];
-          if(e){
-            // If wins/losses already exist, skip
-            if(('wins' in e) || ('losses' in e)) return;
-            if('trades' in e){
-              const t = parseInt(e.trades) || 0;
-              e.wins = t; e.losses = 0; delete e.trades; // migrate
-            } else {
-              // no trades field - default to 0/0
-              e.wins = e.wins || 0;
-              e.losses = e.losses || 0;
+        if(!data[journal]) return;
+        // if entries absent but object contains date keys, try to normalize
+        if(!data[journal].entries){
+          const possibleEntries = {};
+          Object.keys(data[journal]).forEach(k => {
+            if(k === 'start' || k === 'entries') return;
+            // simple heuristic: keys containing '-' likely date keys
+            if(/\d{4}-\d{2}-\d{2}/.test(k) || /\d{1,2}-\d{1,2}/.test(k)){
+              possibleEntries[k] = data[journal][k];
+              delete data[journal][k];
             }
+          });
+          data[journal].entries = possibleEntries;
+        }
+        // ensure start exists
+        if(typeof data[journal].start === 'undefined') data[journal].start = 0;
+        // migrate 'trades' into wins if needed
+        Object.entries(data[journal].entries || {}).forEach(([dateKey, e]) => {
+          if(!e) return;
+          if(('wins' in e) || ('losses' in e)) return;
+          if('trades' in e){
+            const t = parseInt(e.trades) || 0;
+            e.wins = t; e.losses = 0; delete e.trades;
+          } else {
+            e.wins = e.wins || 0; e.losses = e.losses || 0;
           }
         });
       });
@@ -196,22 +218,26 @@
       monthSelect.value = now.getMonth();
 
       if(Object.keys(data).length === 0){ data['Main'] = { entries:{}, start:0 }; }
-      // run migration to bring old data up to new schema
       migrateJournalEntries();
+      if(!data[currentJournal]) data[currentJournal] = { entries:{}, start:0 };
 
-      if(!data[currentJournal]){ data[currentJournal] = { entries:{}, start:0 }; }
       updateJournalList();
       renderCalendar();
 
       // Journals collapse toggle
       const toggleBtn = document.getElementById('toggleJournals');
       const caret = document.getElementById('journalsCaret');
-      let open = true;
-      toggleBtn.onclick = () => {
-        open = !open;
-        journalList.style.display = open ? 'grid' : 'none';
-        caret.textContent = open ? '▾' : '▸';
+      if(toggleBtn){
+        let open = true;
+        toggleBtn.onclick = () => {
+          open = !open;
+          journalList.style.display = open ? 'grid' : 'none';
+          caret.textContent = open ? '▾' : '▸';
+        };
       }
+
+      // set start balance input if available
+      startBalanceInput.value = data[currentJournal].start || 0;
     }
 
     function updateJournalList(){
@@ -219,7 +245,8 @@
       if(Object.keys(data).length === 0){ data['Main'] = {entries:{}, start:0}; }
       Object.keys(data).forEach(journal => {
         const btn = document.createElement('button');
-        btn.textContent = journal; btn.className = (journal===currentJournal)?'active':'';
+        btn.textContent = journal;
+        btn.className = (journal===currentJournal)?'active':'';
         btn.onclick = () => { currentJournal = journal; startBalanceInput.value = data[currentJournal].start || 0; renderCalendar(); updateJournalList(); };
         journalList.appendChild(btn);
       });
@@ -258,6 +285,7 @@
       const losses = parseInt(document.getElementById('entryLosses').value) || 0;
       const link = document.getElementById('entryLink').value.trim();
       if(!selectedDate) return;
+      if(!data[currentJournal].entries) data[currentJournal].entries = {};
       data[currentJournal].entries[selectedDate] = { symbol, pnl, wins, losses, link };
       saveData(); closeModal(); renderCalendar();
     }
@@ -269,13 +297,11 @@
       closeModal(); renderCalendar();
     }
 
-    window.addEventListener('click', (e)=>{
-      if(e.target.id === 'entryModal') closeModal();
-    });
+    window.addEventListener('click', (e)=>{ if(e.target.id === 'entryModal') closeModal(); });
 
     function renderCalendar(){
       calendar.innerHTML = '';
-      weeklySummary.innerHTML = '';
+      compactWeekly.innerHTML = '';
       const year = parseInt(yearSelect.value);
       const month = parseInt(monthSelect.value);
       const startDay = new Date(year, month, 1).getDay(); // 0=Sun
@@ -284,10 +310,12 @@
       const startBal = parseFloat(data[currentJournal].start || 0);
 
       const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      weekdays.forEach(w => { const hd=document.createElement('div'); hd.className='day-header'; hd.textContent=w; calendar.appendChild(hd); });
+      weekdays.forEach(day => { const hd=document.createElement('div'); hd.className='day-header'; hd.textContent=day; calendar.appendChild(hd); });
 
       // Leading blanks
-      for(let i=0;i<startDay;i++) calendar.appendChild(document.createElement('div'));
+      for(let i=0;i<startDay;i++){
+        const empty = document.createElement('div'); empty.className = 'day empty'; calendar.appendChild(empty);
+      }
 
       const today = new Date();
 
@@ -295,34 +323,40 @@
         const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const entry = entries[dateKey] || {};
         const pnl = parseFloat(entry.pnl || 0);
-        const cell = document.createElement('div');
-        cell.className = 'day';
+        const cell = document.createElement('div'); cell.className = 'day';
         if(pnl>0) cell.classList.add('positive'); else if(pnl<0) cell.classList.add('negative');
+
         // Today ring
         if(year===today.getFullYear() && month===today.getMonth() && d===today.getDate()){
           const ring = document.createElement('div'); ring.className='today-ring'; cell.appendChild(ring);
         }
+
         // Content
-        cell.innerHTML += `<strong>${d}</strong>`;
+        const strong = document.createElement('strong'); strong.textContent = d; cell.appendChild(strong);
         if(entry.symbol){
-          cell.innerHTML += `<div class="entry-symbol">${entry.symbol}${entry.link && entry.link.startsWith('http') ? ` <a class=\"entry-link\" href=\"${entry.link}\" target=\"_blank\">🔗</a>` : ''}</div>`;
-          cell.innerHTML += `<div class="entry-pnl">$${isFinite(pnl)?pnl.toFixed(2):'0.00'}</div>`;
+          const sym = document.createElement('div'); sym.className='entry-symbol'; sym.textContent = entry.symbol;
+          if(entry.link && entry.link.startsWith('http')){
+            const a = document.createElement('a'); a.className='entry-link'; a.href = entry.link; a.target = '_blank'; a.textContent = ' 🔗'; sym.appendChild(a);
+          }
+          cell.appendChild(sym);
+          const pnlDiv = document.createElement('div'); pnlDiv.className='entry-pnl'; pnlDiv.textContent = `$${isFinite(pnl)?pnl.toFixed(2):'0.00'}`; cell.appendChild(pnlDiv);
         }
         if(!isNaN(startBal) && startBal!==0 && pnl!==0){
           const pct = ((pnl/startBal)*100).toFixed(2);
-          cell.innerHTML += `<div class="pct ${pnl>0?'positive':'negative'}">${pct}%</div>`;
+          const pctDiv = document.createElement('div'); pctDiv.className = 'pct ' + (pnl>0? 'positive':'negative'); pctDiv.textContent = `${pct}%`; cell.appendChild(pctDiv);
         }
+
         cell.onclick = () => {
           selectedDate = dateKey;
-          const entry = data[currentJournal].entries[selectedDate] || {};
-          document.getElementById('entrySymbol').value = entry.symbol || '';
-          document.getElementById('entryPnl').value = (entry.pnl ?? '');
-          // populate wins/losses (migration ensures fields exist)
-          document.getElementById('entryWins').value = (entry.wins ?? 0);
-          document.getElementById('entryLosses').value = (entry.losses ?? 0);
-          document.getElementById('entryLink').value = entry.link || '';
+          const e = data[currentJournal].entries[selectedDate] || {};
+          document.getElementById('entrySymbol').value = e.symbol || '';
+          document.getElementById('entryPnl').value = (e.pnl ?? '');
+          document.getElementById('entryWins').value = (e.wins ?? 0);
+          document.getElementById('entryLosses').value = (e.losses ?? 0);
+          document.getElementById('entryLink').value = e.link || '';
           openModal();
         };
+
         calendar.appendChild(cell);
       }
 
@@ -369,13 +403,13 @@
     }
 
     function renderWeeklySummary(){
-      weeklySummary.innerHTML = '';
+      compactWeekly.innerHTML = '';
       const entries = data[currentJournal].entries || {};
       const year = parseInt(yearSelect.value);
       const month = parseInt(monthSelect.value);
       const startBal = parseFloat(data[currentJournal].start || 0);
 
-      let weekPnL = 0; let weekNo = 1; let started = false;
+      let weekPnL = 0; let weekNo = 1;
       const daysInMonth = new Date(year, month+1, 0).getDate();
 
       for(let d=1; d<=daysInMonth; d++){
@@ -385,19 +419,18 @@
         const e = entries[key];
         const pnl = parseFloat(e?.pnl || 0);
 
-        if(!started){ started = true; }
         if(!isNaN(pnl)) weekPnL += pnl;
 
-        // Close week on Sunday (except first day), or at month end
+        // Close week on Sunday (dow===0) or at month end
         const isWeekEnd = (dow===0 && d!==1);
         const isMonthEnd = (d===daysInMonth);
         if(isWeekEnd || isMonthEnd){
           const pct = startBal? ((weekPnL/startBal)*100).toFixed(2):'0.00';
-          const color = weekPnL>0? 'positive' : weekPnL<0? 'negative':'';
-          const label = `Week ${weekNo}`;
-          const row = document.createElement('div'); row.className='line';
-          row.innerHTML = `<span>${label}</span><span class="${color}">$${weekPnL.toFixed(2)} (${pct}%)</span>`;
-          weeklySummary.appendChild(row);
+          const chip = document.createElement('div');
+          chip.className = 'chip ' + (weekPnL>=0? 'positive' : 'negative');
+          // Single-line compact format
+          chip.innerHTML = `Week ${weekNo}&nbsp;&nbsp;PnL: $${weekPnL.toFixed(2)} / ${pct}%`;
+          compactWeekly.appendChild(chip);
           weekNo++; weekPnL = 0;
         }
       }
