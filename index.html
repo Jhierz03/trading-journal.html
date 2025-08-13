@@ -9,6 +9,7 @@
     :root{
       --bg:#030910; --card:#0c0725; --text:#eee3e3; --green:#79ebb4; --red:#f05129d8;
       --border:#e9f7eb80; --blue:#386885; --accent:#b8e3ff; --muted:#94a3b8;
+       --today-glow: hsla(68, 100%, 51%, 0.915);
     }
     *{box-sizing:border-box}
     body{
@@ -17,7 +18,7 @@
       background-image:url('ice.jpg'); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed;
     }
  body::before {
-  content:"";s
+  content:"";
   position:fixed;
   inset:0;
   background:rgba(117, 135, 179, 0.5); /* lighter overlay so image shows more */
@@ -54,11 +55,19 @@
   border:2px solid var(--border);
   background:rgba(16,20,32,0.8); /* more transparent */
   box-shadow:inset 0 0 4px rgba(140,190,240,.35);
-  overflow:hidden;
-  font-size:.8rem;
-}s
 
-    .day{position:relative; min-height:78px; padding:6px 6px 8px; border-radius:10px; border:2px solid var(--border); background:radial-gradient(60% 80% at 50% 0%, #102838, #0a1c24); box-shadow:inset 0 0 4px rgba(140,190,240,.35)}
+  font-size:.8rem;
+}
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 8px var(--today-glow), 0 0 16px var(--today-glow), 0 0 24px var(--today-glow);
+  }
+  100% {
+    box-shadow: 0 0 12px var(--today-glow), 0 0 24px var(--today-glow), 0 0 36px var(--today-glow);
+  }
+}
+
+    
     .day:hover{outline:2px solid rgba(184,227,255,.25)}
     .day.positive{background:linear-gradient(180deg, rgba(16,50,32,.9), rgba(7,29,19,.95)); border-color:rgba(0,255,128,.35)}
     .day.negative{background:linear-gradient(180deg, rgba(60,18,18,.8), rgba(25,6,6,.95)); border-color:#812e2e}
@@ -503,5 +512,4 @@
   </script>
 </body>
 </html>
-
 
