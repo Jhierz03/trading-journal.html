@@ -72,6 +72,12 @@ header .center-title {
     #journalList button.active{outline:2px solid #52ffa8; background:#103443}
 
     .calendar{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+
+
+
+
+
+    
    .day {
   position:relative;
   min-height:78px;
@@ -161,8 +167,8 @@ header .center-title {
 ">
   <button onclick="togglePnLGraph()" style="
     position:absolute;
-    top:20px;
-    right:20px;
+    top:21px;
+    right:2px;
     padding:0.5rem 1rem;
     font-size:1rem;
     z-index:101;
@@ -634,8 +640,68 @@ function drawPnLChart() {
       reader.readAsText(file);
     }
 
+
+function drawPnLChart() {
+  const ctx = document.getElementById('pnlGraph').getContext('2d');
+
+  const entries = data[currentJournal].entries || {};
+  const labels = Object.keys(entries).sort();
+  const pnlValues = labels.map(d => parseFloat(entries[d].pnl || 0));
+
+  if (pnlChart) pnlChart.destroy();
+
+  pnlChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Daily PnL',
+        data: pnlValues,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2,
+        borderColor: (ctx) => {
+          // keep fallback
+          return 'lime';
+        },
+        backgroundColor: 'rgba(0,255,0,0.15)',
+
+        // ✅ segment coloring
+        segment: {
+          borderColor: ctx => ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? 'red' : 'lime',
+          backgroundColor: ctx => ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0
+            ? 'rgba(255,0,0,0.15)'
+            : 'rgba(0,255,0,0.15)'
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#eee' } }
+      },
+      scales: {
+        x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        y: { 
+          ticks: { color: '#eee' }, 
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          // ✅ make zero line more visible
+          zeroLineColor: 'white',
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+
+
+
+
     init();
   </script>
 </body>
 </html>
-
