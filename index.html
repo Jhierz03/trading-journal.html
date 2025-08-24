@@ -669,12 +669,13 @@ function drawPnLChart() {
         backgroundColor: 'rgba(0,255,0,0.15)',
 
         // ✅ segment coloring
-        segment: {
-          borderColor: ctx => ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? 'red' : 'lime',
-          backgroundColor: ctx => ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0
-            ? 'rgba(255,0,0,0.15)'
-            : 'rgba(0,255,0,0.15)'
-        }
+       segment: {
+  borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'lime' : 'red',
+  backgroundColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0)
+    ? 'rgba(0,255,0,0.15)'
+    : 'rgba(255,0,0,0.15)'
+}
+
       }]
     },
     options: {
