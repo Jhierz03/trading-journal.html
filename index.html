@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jhierz Trading toggleJournals</title>
   <style>
+
+    
     :root{
       --bg:#030910; --card:#0c0725; --text:#eee3e3; --green:#79ebb4; --red:#f05129d8;
       --border:#e9f7eb80; --blue:#386885; --accent:#b8e3ff; --muted:#94a3b8;
@@ -96,6 +98,26 @@ header .center-title {
     #journalList button.active{outline:2px solid #52ffa8; background:#103443}
 
     .calendar{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;   /* prevent it from going off-screen */
+}
+
+.journal-list {
+  flex: 1;
+  overflow-y: auto;   /* scrollable */
+  max-height: 40vh;   /* adjust how much space list can take */
+  margin: .5rem 0;
+  border: 1px solid var(--text);
+  padding: .5rem;
+  border-radius: .5rem;
+}
+
+.journal-actions, .modal-actions {
+  margin-top: .5rem;
+  flex-shrink: 0;     /* keep buttons from being pushed off */
+}
 
     
    .day {
@@ -147,7 +169,9 @@ header .center-title {
     .modal-actions{display:flex; gap:.5rem}
     .small-inputs{display:flex; gap:.5rem}
     .small-inputs input{width:50%;}
+ 
 
+    
     @media (max-width: 900px){
       .container{flex-direction:column}
       .sidebar{width:100%; border-right:none; border-bottom:1px solid var(--border)}
@@ -157,6 +181,8 @@ header .center-title {
 </head>
 <body>
 
+
+  
 
 <!-- Video background -->
 <video autoplay muted loop playsinline id="bgVideo">
@@ -218,17 +244,29 @@ header .center-title {
 
   <div class="container">
     <aside class="sidebar">
-      <button class="collapser" id="toggleJournals"><b>Journals</b><span id="journalsCaret">▾</span></button>
-      <div id="journalList"></div>
-      <div class="row">
-        <input id="newJournalName" placeholder="        Create your journal" />
-       
-      </div>
-      <div class="row">
- <button onclick="addJournal()">Add</button>
+
+<!-- NEW Journals Button -->
+<button id="openJournalsPopup"><b>📔 Journals</b></button>
+<!-- Journals Popup -->
+<div class="modal" id="journalsModal">
+  <div class="modal-content">
+    <h3 style="margin-top:0">📔 Manage Journals</h3>
+   <div id="journalList" class="journal-list"></div>
+
+
+    <div class="row" style="margin-top:.8rem;">
+      <input id="newJournalName" placeholder="New Journal Name" />
+    </div>
+    <div class="row" style="margin-top:.5rem;">
+      <button onclick="addJournal()">Add</button>
       <button onclick="deleteJournal()">Delete</button>
-       
       <button onclick="renameJournal()">Rename</button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:1rem;">
+      <button onclick="closeJournalsPopup()">Close</button>
+    </div>
+  </div>
 </div>
 
 
@@ -375,6 +413,20 @@ function drawPnLChart() {
 }
 
 
+// Open popup
+document.getElementById('openJournalsPopup').onclick = () => {
+  document.getElementById('journalsModal').style.display = 'flex';
+};
+
+// Close popup
+function closeJournalsPopup() {
+  document.getElementById('journalsModal').style.display = 'none';
+}
+
+// Close if clicking outside content
+window.addEventListener('click', (e)=>{
+  if(e.target.id === 'journalsModal') closeJournalsPopup();
+});
 
 
 
