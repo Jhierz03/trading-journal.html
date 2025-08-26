@@ -333,12 +333,25 @@ function drawPnLChart() {
       datasets: [{
         label: 'Daily PnL',
         data: pnlValues,
-        borderColor: 'lime',
-        backgroundColor: 'rgba(0,255,0,0.2)',
         fill: true,
         tension: 0.3,
         pointRadius: 4,
-        pointHoverRadius: 6
+        pointHoverRadius: 6,
+        borderWidth: 2,
+        borderColor: (ctx) => {
+          // keep fallback
+          return 'lime';
+        },
+        backgroundColor: 'rgba(0,255,0,0.15)',
+
+        // ✅ segment coloring
+       segment: {
+  borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'lime' : 'red',
+  backgroundColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0)
+    ? 'rgba(0,255,0,0.15)'
+    : 'rgba(255,0,0,0.15)'
+}
+
       }]
     },
     options: {
@@ -349,12 +362,17 @@ function drawPnLChart() {
       },
       scales: {
         x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-        y: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+        y: { 
+          ticks: { color: '#eee' }, 
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          // ✅ make zero line more visible
+          zeroLineColor: 'white',
+          beginAtZero: true
+        }
       }
     }
   });
 }
-
 
 
 
@@ -693,62 +711,7 @@ function renameJournal() {
     }
 
 
-function drawPnLChart() {
-  const ctx = document.getElementById('pnlGraph').getContext('2d');
 
-  const entries = data[currentJournal].entries || {};
-  const labels = Object.keys(entries).sort();
-  const pnlValues = labels.map(d => parseFloat(entries[d].pnl || 0));
-
-  if (pnlChart) pnlChart.destroy();
-
-  pnlChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Daily PnL',
-        data: pnlValues,
-        fill: true,
-        tension: 0.3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        borderWidth: 2,
-        borderColor: (ctx) => {
-          // keep fallback
-          return 'lime';
-        },
-        backgroundColor: 'rgba(0,255,0,0.15)',
-
-        // ✅ segment coloring
-       segment: {
-  borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'lime' : 'red',
-  backgroundColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0)
-    ? 'rgba(0,255,0,0.15)'
-    : 'rgba(255,0,0,0.15)'
-}
-
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#eee' } }
-      },
-      scales: {
-        x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-        y: { 
-          ticks: { color: '#eee' }, 
-          grid: { color: 'rgba(255,255,255,0.1)' },
-          // ✅ make zero line more visible
-          zeroLineColor: 'white',
-          beginAtZero: true
-        }
-      }
-    }
-  });
-}
 
 
 
