@@ -119,7 +119,14 @@ header .center-title {
   flex-shrink: 0;     /* keep buttons from being pushed off */
 }
 
-    
+  .day-header {
+  text-align:center;
+  font-weight:600;
+  color: var(--accent);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+  
    .day {
   position:relative;
   min-height:78px;
@@ -485,17 +492,7 @@ window.addEventListener('click', (e)=>{
       updateJournalList();
       renderCalendar();
 
-      // Journals collapse toggle
-      const toggleBtn = document.getElementById('toggleJournals');
-      const caret = document.getElementById('journalsCaret');
-      if(toggleBtn){
-        let open = true;
-        toggleBtn.onclick = () => {
-          open = !open;
-          journalList.style.display = open ? 'grid' : 'none';
-          caret.textContent = open ? '▾' : '▸';
-        };
-      }
+     
 
       // set start balance input if available
       startBalanceInput.value = data[currentJournal].start || 0;
@@ -773,7 +770,6 @@ function renameJournal() {
   </script>
 </body>
 </html>
-
 
 
 
