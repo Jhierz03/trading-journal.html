@@ -184,6 +184,59 @@ header .center-title {
       .sidebar{width:100%; border-right:none; border-bottom:1px solid var(--border)}
       header{flex-direction:column; gap:.5rem; text-align:center}
     }
+
+
+
+/* Sidebar collapse styles */
+.sidebar {
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 999;
+  background: var(--card);
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;     /* neat size */
+  line-height: 1;        /* removes extra vertical spacing */
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 6px;      /* small padding */
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;           /* fixed width */
+  height: 36px;          /* fixed height */
+  transition: background 0.2s;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255,255,255,0.08); /* subtle hover */
+}
+
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    width: 250px;
+    height: 100%;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+  }
+}
+
+
+    
   </style>
 </head>
 <body>
@@ -206,8 +259,13 @@ header .center-title {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <div class="row" style="margin-top:0.5rem;">
+      <button id="sidebarToggle" class="sidebar-toggle">☰</button>
+
+
+
+      
 <button id="toggleGraphBtn" style="padding:0.35rem 0.6rem; font-size:0.85rem; width:auto; margin-bottom:10px;">
-  📈 Show/Hide PnL Graph
+  📈PnL Graph
 </button>
 
 <div id="chartContainer" style="width:100%; height:400px; margin-top:10px; display:none;">
@@ -373,6 +431,8 @@ function drawPnLChart() {
 
   pnlChart = new Chart(ctx, {
     type: 'line',
+  
+  
     data: {
       labels: labels,
       datasets: [{
@@ -407,16 +467,22 @@ function drawPnLChart() {
       },
       scales: {
         x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-        y: { 
-          ticks: { color: '#eee' }, 
-          grid: { color: 'rgba(255,255,255,0.1)' },
-          // ✅ make zero line more visible
-          zeroLineColor: 'white',
-          beginAtZero: true
-        }
+      y: {
+  ticks: { color: '#eee' },
+  grid: {
+    color: ctx => ctx.tick.value === 0 ? 'white' : 'rgba(255,255,255,0.1)'
+  },
+  beginAtZero: true
+}
+
+     
       }
+      
     }
-  });
+    
+  }
+  
+  );
 }
 
 
@@ -761,6 +827,9 @@ function renameJournal() {
 
 
 
+document.getElementById("sidebarToggle").addEventListener("click", () => {
+  document.querySelector(".sidebar").classList.toggle("collapsed");
+});
 
 
 
