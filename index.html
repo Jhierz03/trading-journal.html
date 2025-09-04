@@ -81,7 +81,9 @@ header .center-title {
     .yellow-text{color:#12da3a}
 
     .container{display:flex; flex:1; min-height:0}
-    .sidebar{width:280px; background:var(--card); padding:1rem; border-right:1px solid var(--border); overflow:auto}
+    
+   
+    
     .main{flex:1; padding:1rem; overflow:auto}
 
     label{display:block; margin:.5rem 0 .25rem; color:var(--muted); font-size:.9rem}
@@ -185,6 +187,40 @@ header .center-title {
       header{flex-direction:column; gap:.5rem; text-align:center}
     }
 
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  background: #0c0725;
+  color: #eee3e3;
+}
+
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+
+ 
+ .sidebar {
+  width: 280px;
+  background: rgba(12, 7, 37, 0.5); /* slightly transparent */
+  padding: 1rem;
+  border-right: 1px solid var(--border);
+  overflow: auto;
+  backdrop-filter: blur(6px); /* optional: adds a frosted glass effect */
+}
+
+/* Right panel */
+.sidebar-right {
+  width: 280px;
+  background: rgba(12, 7, 37, 0.5); /* slightly transparent */
+  padding: 1rem;
+  border-right: 1px solid var(--border);
+  overflow: auto;
+  backdrop-filter: blur(6px); /* optional: adds a frosted glass effect */
+}
+
 
 
 /* Sidebar collapse styles */
@@ -235,6 +271,61 @@ header .center-title {
   }
 }
 
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px dashed rgba(255,255,255,0.1);
+  font-size: 0.9rem;
+}
+
+.history-item button {
+  background: var(--green);
+  border: none;
+  color: #e8b7b7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.history-item button:hover {
+  background: #12a432;
+}
+@media (max-width: 1100px) {
+  #historyModal .modal-content {
+    width: 95%;
+    height: 80%;
+  }
+}
+.history-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto; /* Date | Amount | Delete */
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size:0.95rem;
+}
+
+.history-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item button {
+  background: var(--green);
+  border: none;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size:0.85rem;
+}
+
+.history-item button:hover {
+  background: #3309b4;
+}
 
     
   </style>
@@ -246,7 +337,7 @@ header .center-title {
 
 <!-- Video background -->
 <video autoplay muted loop playsinline id="bgVideo">
-  <source src="girl eyes.mp4" type="video/mp4">
+  <source src="goku.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
@@ -291,10 +382,6 @@ header .center-title {
   ">❌ Close</button>
   <canvas id="pnlGraph" style="max-width:95%; max-height:90%;"></canvas>
 </div>
-
-
-
-
 
 
 
@@ -359,22 +446,21 @@ header .center-title {
 
       <div class="overview" id="overviewStats"></div>
 
-      <div class="row">
-        <button onclick="exportData()">📤 Export</button>
-        <label style="width:100%">
-          <input type="file" accept="application/json" onchange="importData(event)" />
-        </label>
-      </div>
+     
     </aside>
 
+     
+
     <main class="main">
-      <div class="calendar" id="calendar"></div>
-      <div class="week-summary" id="weeklySummary">
+      <div class="calendar"
+       id="calendar"></div>
+      <div class="week-summary"
+       id="weeklySummary">
         <!-- compact weekly chips will be injected here -->
         <div id="compactWeekly" class="compact-weekly"></div>
       </div>
     </main>
-  </div>
+
 
   <!-- Modal -->
   <div class="modal" id="entryModal">
@@ -394,6 +480,39 @@ header .center-title {
       </div>
     </div>
   </div>
+  <div class="sidebar-right">
+    <div class="row in line">
+      <input type="withdrawtxt"placeholder="    Amount">
+      <button id="historybtn">History</button>
+  </div> 
+</div> 
+
+<!-- Withdrawal History Modal -->
+<div class="modal" id="historyModal">
+  <div class="modal-content" style="width:100%; max-width:1000px; height:600px; max-height:90%; display:flex; flex-direction:column; padding:1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+      <h3 style="margin:0; font-size:1.2rem; font-weight:700; color:var(--accent);">💰 Withdrawal History</h3>
+     <button onclick="closeHistoryModal()" style="
+  background: var(--green);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+">❌</button>
+
+    </div>
+    <div id="historyList" style="flex:1; overflow-y:auto; border-top:1px solid var(--border); padding-top:0.5rem; font-family:Segoe UI, sans-serif; font-size:0.9rem;"></div>
+  </div>
+</div>
+
+
+
 
   <script>
     const calendar = document.getElementById('calendar');
@@ -541,41 +660,45 @@ window.addEventListener('click', (e)=>{
       saveData();
     }
 
-    function init(){
-      const now = new Date();
-      const year = now.getFullYear();
-      for(let y=year-5; y<=year+5; y++){
-        const opt = document.createElement('option');
-        opt.value = y; opt.textContent = y; yearSelect.appendChild(opt);
-      }
-      yearSelect.value = year;
-      monthSelect.value = now.getMonth();
+    function init() {
+  const now = new Date();
+  const year = now.getFullYear();
+  for(let y=year-5; y<=year+5; y++){
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y; yearSelect.appendChild(opt);
+  }
+  yearSelect.value = year;
+  monthSelect.value = now.getMonth();
 
-      if(Object.keys(data).length === 0){ data['Main'] = { entries:{}, start:0 }; }
-      migrateJournalEntries();
-      if(!data[currentJournal]) data[currentJournal] = { entries:{}, start:0 };
+  if(Object.keys(data).length === 0){ data['Main'] = { entries:{}, start:0 }; }
+  migrateJournalEntries();
+  if(!data[currentJournal]) data[currentJournal] = { entries:{}, start:0 };
 
-      updateJournalList();
-      renderCalendar();
-
+  updateJournalList();
+  renderCalendar();
      
 
       // set start balance input if available
       startBalanceInput.value = data[currentJournal].start || 0;
     }
 
-    function updateJournalList(){
-      journalList.innerHTML = '';
-      if(Object.keys(data).length === 0){ data['Main'] = {entries:{}, start:0}; }
-      Object.keys(data).forEach(journal => {
-        const btn = document.createElement('button');
-        btn.textContent = journal;
-        btn.className = (journal===currentJournal)?'active':'';
-        btn.onclick = () => { currentJournal = journal; startBalanceInput.value = data[currentJournal].start || 0; renderCalendar(); updateJournalList(); };
-        journalList.appendChild(btn);
-      });
+   function updateJournalList(){
+  journalList.innerHTML = '';
+  if(Object.keys(data).length === 0){ data['Main'] = {entries:{}, start:0}; }
+  Object.keys(data).forEach(journal => {
+    const btn = document.createElement('button');
+    btn.textContent = journal;
+    btn.className = (journal===currentJournal)?'active':'';
+    btn.onclick = () => {
+      currentJournal = journal;
+      // ✅ set input only on journal switch
       startBalanceInput.value = data[currentJournal].start || 0;
-    }
+      renderCalendar();
+      updateJournalList();
+    };
+    journalList.appendChild(btn);
+  });
+}
 
     function addJournal(){
       const name = document.getElementById('newJournalName').value.trim();
@@ -610,14 +733,16 @@ function renameJournal() {
   currentJournal = newName;
   saveData();
   updateJournalList();
-  renderCalendar();
+
 }
 
 
-    function updateStartBalance(){
-      data[currentJournal].start = parseFloat(startBalanceInput.value) || 0;
-      saveData(); renderCalendar();
-    }
+   function updateStartBalance(){
+  const val = parseFloat(startBalanceInput.value);
+  data[currentJournal].start = isNaN(val) ? 0 : val;
+  saveData();
+  renderCalendar();
+}
 
     function openModal(){ document.getElementById('entryModal').style.display='flex'; }
     function closeModal(){ document.getElementById('entryModal').style.display='none'; }
@@ -802,43 +927,72 @@ function renameJournal() {
       document.getElementById('headerMonthlyGainPercent').style.color = gainColor;
     }
 
-    // Export / Import
-    function exportData(){
-      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "trading_journal.json";
-      a.click();
-    }
-    function importData(event){
-      const file = event.target.files[0];
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        try{
-          data = JSON.parse(e.target.result);
-          currentJournal = Object.keys(data)[0] || 'Main';
-          migrateJournalEntries();
-          saveData(); updateJournalList(); renderCalendar();
-        }catch(err){ alert('Invalid JSON file'); }
-      };
-      reader.readAsText(file);
-    }
-
-
+   
 
 document.getElementById("sidebarToggle").addEventListener("click", () => {
   document.querySelector(".sidebar").classList.toggle("collapsed");
 });
+let withdrawals = JSON.parse(localStorage.getItem('withdrawals')) || [];
 
+const withdrawInput = document.querySelector('.sidebar-right input[type="withdrawtxt"]');
+const historyBtn = document.getElementById('historybtn');
 
+historyBtn.onclick = () => {
+  renderHistory();
+  document.getElementById('historyModal').style.display = 'flex';
+};
 
+function closeHistoryModal(){
+  document.getElementById('historyModal').style.display = 'none';
+}
 
+// Add withdrawal on Enter
+withdrawInput.addEventListener('keypress', e => {
+  if(e.key === 'Enter' && withdrawInput.value.trim() !== ''){
+    addWithdrawal(parseFloat(withdrawInput.value));
+    withdrawInput.value = '';
+  }
+});
 
-    init();
+function addWithdrawal(amount){
+  if(isNaN(amount) || amount <= 0) return;
+  const date = new Date();
+  withdrawals.push({ date: date.toLocaleDateString(), amount });
+  localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+  renderHistory();
+}
+
+function renderHistory(){
+  const container = document.getElementById('historyList');
+  container.innerHTML = '';
+  withdrawals.forEach((w, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <span>${w.date}</span>
+      <span>$${w.amount.toFixed(2)}</span>
+      <button onclick="deleteWithdrawal(${i})">❌</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function deleteWithdrawal(index){
+  withdrawals.splice(index, 1);
+  localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+  renderHistory();
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+  if(e.target.id === 'historyModal') closeHistoryModal();
+});
+
+init();
   </script>
 </body>
 </html>
+
 
 
 
