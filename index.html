@@ -517,37 +517,33 @@ body {
   </div>
 </div>
 
+<script>
+const calendar = document.getElementById('calendar');
+const yearSelect = document.getElementById('yearSelect');
+const monthSelect = document.getElementById('monthSelect');
+const journalList = document.getElementById('journalList');
+const startBalanceInput = document.getElementById('startBalance');
+const overviewStats = document.getElementById('overviewStats');
+const weeklySummary = document.getElementById('weeklySummary');
+const compactWeekly = document.getElementById('compactWeekly');
 
+let data = JSON.parse(localStorage.getItem('tradingData')) || {};
+let currentJournal = Object.keys(data)[0] || 'Main';
+let selectedDate = null;
+let withdrawals = JSON.parse(localStorage.getItem('withdrawals')) || [];
 
-
-  <script>
-    const calendar = document.getElementById('calendar');
-    const yearSelect = document.getElementById('yearSelect');
-    const monthSelect = document.getElementById('monthSelect');
-    const journalList = document.getElementById('journalList');
-    const startBalanceInput = document.getElementById('startBalance');
-    const overviewStats = document.getElementById('overviewStats');
-    const weeklySummary = document.getElementById('weeklySummary');
-    const compactWeekly = document.getElementById('compactWeekly');
-
-    let data = JSON.parse(localStorage.getItem('tradingData')) || {};
-    let currentJournal = Object.keys(data)[0] || 'Main';
-    let selectedDate = null;
-document.getElementById('toggleGraphBtn').onclick = togglePnLGraph;
-
-
+// ------------------ CHART ------------------
 let pnlChart = null;
+document.getElementById('toggleGraphBtn').onclick = togglePnLGraph;
 
 function togglePnLGraph() {
   const overlay = document.getElementById('pnlGraphOverlay');
   overlay.style.display = overlay.style.display === 'flex' ? 'none' : 'flex';
-
   if (overlay.style.display === 'flex') drawPnLChart();
 }
 
 function drawPnLChart() {
   const ctx = document.getElementById('pnlGraph').getContext('2d');
-
   const entries = data[currentJournal].entries || {};
   const labels = Object.keys(entries).sort();
   const pnlValues = labels.map(d => parseFloat(entries[d].pnl || 0));
@@ -556,10 +552,8 @@ function drawPnLChart() {
 
   pnlChart = new Chart(ctx, {
     type: 'line',
-  
-  
     data: {
-      labels: labels,
+      labels,
       datasets: [{
         label: 'Daily PnL',
         data: pnlValues,
@@ -568,137 +562,66 @@ function drawPnLChart() {
         pointRadius: 4,
         pointHoverRadius: 6,
         borderWidth: 2,
-        borderColor: (ctx) => {
-          // keep fallback
-          return 'lime';
-        },
+        borderColor: 'lime',
         backgroundColor: 'rgba(0,255,0,0.15)',
-
-        // ✅ segment coloring
-       segment: {
-  borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'lime' : 'red',
-  backgroundColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0)
-    ? 'rgba(0,255,0,0.15)'
-    : 'rgba(255,0,0,0.15)'
-}
-
+        segment: {
+          borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'lime' : 'red',
+          backgroundColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)'
+        }
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#eee' } }
-      },
+      plugins: { legend: { labels: { color: '#eee' } } },
       scales: {
         x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-      y: {
-  ticks: { color: '#eee' },
-  grid: {
-    color: ctx => ctx.tick.value === 0 ? 'white' : 'rgba(255,255,255,0.1)'
-  },
-  beginAtZero: true
-}
-
-     
+        y: { ticks: { color: '#eee' }, grid: { color: ctx => ctx.tick.value === 0 ? 'white' : 'rgba(255,255,255,0.1)' }, beginAtZero: true }
       }
-      
     }
-    
-  }
-  
-  );
+  });
 }
 
+// ------------------ DATA ------------------
+function saveData(){ localStorage.setItem('tradingData', JSON.stringify(data)); }
 
-// Open popup
-document.getElementById('openJournalsPopup').onclick = () => {
-  document.getElementById('journalsModal').style.display = 'flex';
-};
-
-// Close popup
-function closeJournalsPopup() {
-  document.getElementById('journalsModal').style.display = 'none';
-}
-
-// Close if clicking outside content
-window.addEventListener('click', (e)=>{
-  if(e.target.id === 'journalsModal') closeJournalsPopup();
-});
-
-
-
-
-    function saveData(){ localStorage.setItem('tradingData', JSON.stringify(data)); }
-
-    function migrateJournalEntries(){
-      // Convert older shapes into {entries:{...}, start:...}
-      if(!data || typeof data !== 'object') data = {};
-      Object.keys(data).forEach(journal => {
-        if(!data[journal]) return;
-        // if entries absent but object contains date keys, try to normalize
-        if(!data[journal].entries){
-          const possibleEntries = {};
-          Object.keys(data[journal]).forEach(k => {
-            if(k === 'start' || k === 'entries') return;
-            // simple heuristic: keys containing '-' likely date keys
-            if(/\d{4}-\d{2}-\d{2}/.test(k) || /\d{1,2}-\d{1,2}/.test(k)){
-              possibleEntries[k] = data[journal][k];
-              delete data[journal][k];
-            }
-          });
-          data[journal].entries = possibleEntries;
-        }
-        // ensure start exists
-        if(typeof data[journal].start === 'undefined') data[journal].start = 0;
-        // migrate 'trades' into wins if needed
-        Object.entries(data[journal].entries || {}).forEach(([dateKey, e]) => {
-          if(!e) return;
-          if(('wins' in e) || ('losses' in e)) return;
-          if('trades' in e){
-            const t = parseInt(e.trades) || 0;
-            e.wins = t; e.losses = 0; delete e.trades;
-          } else {
-            e.wins = e.wins || 0; e.losses = e.losses || 0;
-          }
-        });
-      });
-      saveData();
-    }
-
-    function init() {
-  const now = new Date();
-  const year = now.getFullYear();
-  for(let y=year-5; y<=year+5; y++){
-    const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y; yearSelect.appendChild(opt);
-  }
-  yearSelect.value = year;
-  monthSelect.value = now.getMonth();
-
-  if(Object.keys(data).length === 0){ data['Main'] = { entries:{}, start:0 }; }
-  migrateJournalEntries();
-  if(!data[currentJournal]) data[currentJournal] = { entries:{}, start:0 };
-
-  updateJournalList();
-  renderCalendar();
-     
-
-      // set start balance input if available
-      startBalanceInput.value = data[currentJournal].start || 0;
-    }
-
-   function updateJournalList(){
-  journalList.innerHTML = '';
-  if(Object.keys(data).length === 0){ data['Main'] = {entries:{}, start:0}; }
+function migrateJournalEntries(){
+  if(!data || typeof data !== 'object') data = {};
   Object.keys(data).forEach(journal => {
-    const btn = document.createElement('button');
-    btn.textContent = journal;
-    btn.className = (journal===currentJournal)?'active':'';
-    btn.onclick = () => {
-      currentJournal = journal;
-      // ✅ set input only on journal switch
-      startBalanceInput.value = data[currentJournal].start || 0;
+    if(!data[journal]) return;
+    if(!data[journal].entries){
+      const possibleEntries = {};
+      Object.keys(data[journal]).forEach(k => {
+        if(k==='start'||k==='entries') return;
+        if(/\d{4}-\d{2}-\d{2}/.test(k) || /\d{1,2}-\d{1,2}/.test(k)){
+          possibleEntries[k]=data[journal][k];
+          delete data[journal][k];
+        }
+      });
+      data[journal].entries = possibleEntries;
+    }
+    if(typeof data[journal].start === 'undefined') data[journal].start = 0;
+    Object.entries(data[journal].entries || {}).forEach(([dateKey,e])=>{
+      if(!e) return;
+      if(('wins' in e) || ('losses' in e)) return;
+      if('trades' in e){ const t=parseInt(e.trades)||0; e.wins=t; e.losses=0; delete e.trades;}
+      else { e.wins=e.wins||0; e.losses=e.losses||0;}
+    });
+  });
+  saveData();
+}
+
+// ------------------ JOURNALS ------------------
+function updateJournalList(){
+  journalList.innerHTML='';
+  if(!data[currentJournal]) data[currentJournal]={entries:{},adjustments:{},start:0};
+  Object.keys(data).forEach(journal=>{
+    const btn=document.createElement('button');
+    btn.textContent=journal;
+    btn.className=(journal===currentJournal)?'active':'';
+    btn.onclick=()=>{
+      currentJournal=journal;
+      startBalanceInput.value=data[currentJournal].start||0;
       renderCalendar();
       updateJournalList();
     };
@@ -706,257 +629,301 @@ window.addEventListener('click', (e)=>{
   });
 }
 
-    function addJournal(){
-      const name = document.getElementById('newJournalName').value.trim();
-      if(!name || data[name]) return;
-      data[name] = { entries:{}, start:0 };
-      currentJournal = name; saveData(); updateJournalList(); renderCalendar();
-      document.getElementById('newJournalName').value = '';
-    }
-
-    function deleteJournal(){
-      if(!confirm(`Delete journal '${currentJournal}'?`)) return;
-      delete data[currentJournal];
-      const keys = Object.keys(data);
-      currentJournal = keys[0] || 'Main';
-      if(!data[currentJournal]) data[currentJournal] = {entries:{}, start:0};
-      saveData(); updateJournalList(); renderCalendar();
-    }
-
-function renameJournal() {
-  const newName = prompt("Enter new name for journal:", currentJournal);
-  if (!newName) return;
-
-  if (data[newName] && newName !== currentJournal) {
-    alert("A journal with that name already exists!");
-    return;
+function addJournal(){
+  const name=document.getElementById('newJournalName').value.trim();
+  if(name && !data[name]){
+    data[name]={entries:{},adjustments:{},start:0};
+    currentJournal=name;
+    saveData(); updateJournalList(); renderCalendar();
   }
-
-  // Move data under new name
-  data[newName] = data[currentJournal];
-  if (newName !== currentJournal) delete data[currentJournal];
-
-  currentJournal = newName;
-  saveData();
-  updateJournalList();
-
 }
 
-
-   function updateStartBalance(){
-  const val = parseFloat(startBalanceInput.value);
-  data[currentJournal].start = isNaN(val) ? 0 : val;
-  saveData();
-  renderCalendar();
+function deleteJournal(){
+  if(!confirm(`Delete journal '${currentJournal}'?`)) return;
+  delete data[currentJournal];
+  const keys=Object.keys(data);
+  currentJournal=keys[0]||'Main';
+  if(!data[currentJournal]) data[currentJournal]={entries:{},start:0};
+  saveData(); updateJournalList(); renderCalendar();
 }
 
-    function openModal(){ document.getElementById('entryModal').style.display='flex'; }
-    function closeModal(){ document.getElementById('entryModal').style.display='none'; }
+function renameJournal(){
+  const newName=prompt("Enter new name for journal:",currentJournal);
+  if(!newName) return;
+  if(data[newName] && newName!==currentJournal){ alert("A journal with that name already exists!"); return; }
+  data[newName]=data[currentJournal];
+  if(newName!==currentJournal) delete data[currentJournal];
+  currentJournal=newName;
+  saveData(); updateJournalList(); renderCalendar();
+}
 
-    function saveEntry(){
-      const symbol = document.getElementById('entrySymbol').value.trim();
-      const pnl = parseFloat(document.getElementById('entryPnl').value || 0);
-      const wins = parseInt(document.getElementById('entryWins').value) || 0;
-      const losses = parseInt(document.getElementById('entryLosses').value) || 0;
-      const link = document.getElementById('entryLink').value.trim();
-      if(!selectedDate) return;
-      if(!data[currentJournal].entries) data[currentJournal].entries = {};
-      data[currentJournal].entries[selectedDate] = { symbol, pnl, wins, losses, link };
-      saveData(); closeModal(); renderCalendar();
-    }
+function updateStartBalance(){
+  const val=parseFloat(startBalanceInput.value);
+  data[currentJournal].start=isNaN(val)?0:val;
+  saveData(); renderCalendar();
+}
 
-    function deleteEntry(){
-      if(!selectedDate) return;
-      const entries = data[currentJournal].entries || {};
-      if(entries[selectedDate]){ delete entries[selectedDate]; saveData(); }
-      closeModal(); renderCalendar();
-    }
+// ------------------ JOURNALS POPUP ------------------
+const journalsModal = document.getElementById('journalsModal');
+const openJournalsBtn = document.getElementById('openJournalsPopup');
 
-    window.addEventListener('click', (e)=>{ if(e.target.id === 'entryModal') closeModal(); });
-
-    function renderCalendar(){
-      calendar.innerHTML = '';
-      compactWeekly.innerHTML = '';
-      const year = parseInt(yearSelect.value);
-      const month = parseInt(monthSelect.value);
-      const startDay = new Date(year, month, 1).getDay(); // 0=Sun
-      const daysInMonth = new Date(year, month+1, 0).getDate();
-      const entries = data[currentJournal].entries || {};
-      const startBal = parseFloat(data[currentJournal].start || 0);
-
-      const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      weekdays.forEach(day => { const hd=document.createElement('div'); hd.className='day-header'; hd.textContent=day; calendar.appendChild(hd); });
-
-      // Leading blanks
-      for(let i=0;i<startDay;i++){
-        const empty = document.createElement('div'); empty.className = 'day empty'; calendar.appendChild(empty);
-      }
-
-      const today = new Date();
-
-      for(let d=1; d<=daysInMonth; d++){
-        const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const entry = entries[dateKey] || {};
-        const pnl = parseFloat(entry.pnl || 0);
-        const cell = document.createElement('div'); cell.className = 'day';
-        if(pnl>0) cell.classList.add('positive'); else if(pnl<0) cell.classList.add('negative');
-
-        // Today ring
-        if(year===today.getFullYear() && month===today.getMonth() && d===today.getDate()){
-          const ring = document.createElement('div'); ring.className='today-ring'; cell.appendChild(ring);
-        }
-
-        // Content
-        const strong = document.createElement('strong'); strong.textContent = d; cell.appendChild(strong);
-        if(entry.symbol){
-          const sym = document.createElement('div'); sym.className='entry-symbol'; sym.textContent = entry.symbol;
-          if(entry.link && entry.link.startsWith('http')){
-            const a = document.createElement('a'); a.className='entry-link'; a.href = entry.link; a.target = '_blank'; a.textContent = ' 🔗'; sym.appendChild(a);
-          }
-          cell.appendChild(sym);
-          const pnlDiv = document.createElement('div'); pnlDiv.className='entry-pnl'; pnlDiv.textContent = `$${isFinite(pnl)?pnl.toFixed(2):'0.00'}`; cell.appendChild(pnlDiv);
-        }
-        if(!isNaN(startBal) && startBal!==0 && pnl!==0){
-          const pct = ((pnl/startBal)*100).toFixed(2);
-          const pctDiv = document.createElement('div'); pctDiv.className = 'pct ' + (pnl>0? 'positive':'negative'); pctDiv.textContent = `${pct}%`; cell.appendChild(pctDiv);
-        }
-
-        cell.onclick = () => {
-          selectedDate = dateKey;
-          const e = data[currentJournal].entries[selectedDate] || {};
-          document.getElementById('entrySymbol').value = e.symbol || '';
-          document.getElementById('entryPnl').value = (e.pnl ?? '');
-          document.getElementById('entryWins').value = (e.wins ?? 0);
-          document.getElementById('entryLosses').value = (e.losses ?? 0);
-          document.getElementById('entryLink').value = e.link || '';
-          openModal();
-        };
-
-        calendar.appendChild(cell);
-      }
-
-      renderOverview();
-    }
-
-    function renderOverview(){
-      const entries = Object.values(data[currentJournal].entries || {});
-      let totalTrades = 0, wins = 0, loss = 0, best = -Infinity, worst = Infinity, balance = parseFloat(data[currentJournal].start || 0);
-
-      entries.forEach(e=>{
-        const pnl = parseFloat(e.pnl || 0);
-        const w = parseInt(e.wins || 0);
-        const l = parseInt(e.losses || 0);
-        if(isNaN(pnl) && w===0 && l===0) return;
-        balance += isNaN(pnl)?0:pnl;
-        wins += isNaN(w)?0:w;
-        loss += isNaN(l)?0:l;
-        if(!isNaN(pnl)){
-          if(pnl>best) best=pnl;
-          if(pnl<worst) worst=pnl;
-        }
-        totalTrades += (isNaN(w)?0:w) + (isNaN(l)?0:l);
-      });
-
-      renderWeeklySummary();
-
-      const winRate = (wins+loss)>0 ? ((wins/(wins+loss))*100).toFixed(2)+"%" : '0%';
-      const balanceClass = balance >= (data[currentJournal].start||0) ? 'positive' : 'negative';
-      const bestClass = best>=0 ? 'positive':'negative';
-      const worstClass = worst<0 ? 'negative':'positive';
-
-      overviewStats.innerHTML = `
-        <div>📊 <b>Balance:</b> <span class="${balanceClass}">$${balance.toFixed(2)}</span></div>
-        <div>📈 <b>Total Trades:</b> <span>${totalTrades}</span></div>
-        <div>✅ <b>Winning Trades:</b> <span class="positive">${wins}</span></div>
-        <div>❌ <b>Losing Trades:</b> <span class="negative">${loss}</span></div>
-        <div>🏁 <b>Win Rate:</b> <span>${winRate}</span></div>
-        <div>🏆 <b>Best Day:</b> <span class="${bestClass}">${best===-Infinity?'-':best}</span></div>
-        <div>💔 <b>Worst Day:</b> <span class="${worstClass}">${worst===Infinity?'-':worst}</span></div>
-      `;
-
-      updateHeaderBalances(parseFloat(data[currentJournal].start||0), balance);
-    }
-
-    function renderWeeklySummary(){
-      compactWeekly.innerHTML = '';
-      const entries = data[currentJournal].entries || {};
-      const year = parseInt(yearSelect.value);
-      const month = parseInt(monthSelect.value);
-      const startBal = parseFloat(data[currentJournal].start || 0);
-
-      let weekPnL = 0; let weekNo = 1;
-      const daysInMonth = new Date(year, month+1, 0).getDate();
-
-      for(let d=1; d<=daysInMonth; d++){
-        const date = new Date(year, month, d);
-        const dow = date.getDay(); // 0 Sun
-        const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const e = entries[key];
-        const pnl = parseFloat(e?.pnl || 0);
-
-        if(!isNaN(pnl)) weekPnL += pnl;
-
-        // Close week on Sunday (dow===0) or at month end
-        const isWeekEnd = (dow===0 && d!==1);
-        const isMonthEnd = (d===daysInMonth);
-        if(isWeekEnd || isMonthEnd){
-          const pct = startBal? ((weekPnL/startBal)*100).toFixed(2):'0.00';
-          const chip = document.createElement('div');
-          chip.className = 'chip ' + (weekPnL>=0? 'positive' : 'negative');
-          // Single-line compact format
-          chip.innerHTML = `Week ${weekNo}&nbsp;&nbsp;PnL: $${weekPnL.toFixed(2)} / ${pct}%`;
-          compactWeekly.appendChild(chip);
-          weekNo++; weekPnL = 0;
-        }
-      }
-    }
-
-    function updateHeaderBalances(startingBalance, currentBalance){
-      const year = parseInt(yearSelect.value);
-      const month = parseInt(monthSelect.value);
-      const entries = data[currentJournal].entries || {};
-      let monthlyPnl = 0;
-      for(const [key,entry] of Object.entries(entries)){
-        const [y,m] = key.split('-').map(Number);
-        if(y===year && m===(month+1)){
-          const pnl = parseFloat(entry.pnl || 0);
-          if(!isNaN(pnl)) monthlyPnl += pnl;
-        }
-      }
-      const gainPercent = startingBalance>0 ? ((monthlyPnl/startingBalance)*100).toFixed(2) : '0.00';
-      document.getElementById('headerStartingBalance').textContent = (startingBalance||0).toFixed(2);
-      document.getElementById('headerCurrentBalance').textContent = (currentBalance||0).toFixed(2);
-      document.getElementById('headerMonthlyPnl').textContent = `$${monthlyPnl.toFixed(2)}`;
-      document.getElementById('headerMonthlyGainPercent').textContent = `${gainPercent}%`;
-      const gainColor = monthlyPnl>0? 'lightgreen' : monthlyPnl<0? 'salmon' : '#e7e3e3';
-      document.getElementById('headerMonthlyPnl').style.color = gainColor;
-      document.getElementById('headerMonthlyGainPercent').style.color = gainColor;
-    }
-
-   
-
-document.getElementById("sidebarToggle").addEventListener("click", () => {
-  document.querySelector(".sidebar").classList.toggle("collapsed");
-});
-let withdrawals = JSON.parse(localStorage.getItem('withdrawals')) || [];
-
-const withdrawInput = document.querySelector('.sidebar-right input[type="withdrawtxt"]');
-const historyBtn = document.getElementById('historybtn');
-
-historyBtn.onclick = () => {
-  renderHistory();
-  document.getElementById('historyModal').style.display = 'flex';
+openJournalsBtn.onclick = () => {
+  journalsModal.style.display = 'flex';
 };
 
-function closeHistoryModal(){
-  document.getElementById('historyModal').style.display = 'none';
+function closeJournalsPopup() {
+  journalsModal.style.display = 'none';
 }
 
-// Add withdrawal on Enter
-withdrawInput.addEventListener('keypress', e => {
-  if(e.key === 'Enter' && withdrawInput.value.trim() !== ''){
+// Close modal if clicked outside
+window.addEventListener('click', e => {
+  if (e.target === journalsModal) closeJournalsPopup();
+});
+
+// ------------------ MODAL ENTRY ------------------
+function openModal(){ document.getElementById('entryModal').style.display='flex'; }
+function closeModal(){ document.getElementById('entryModal').style.display='none'; }
+
+function saveEntry(){
+  const symbol=document.getElementById('entrySymbol').value.trim();
+  const pnl=parseFloat(document.getElementById('entryPnl').value||0);
+  const wins=parseInt(document.getElementById('entryWins').value)||0;
+  const losses=parseInt(document.getElementById('entryLosses').value)||0;
+  const link=document.getElementById('entryLink').value.trim();
+  if(!selectedDate) return;
+  if(!data[currentJournal].entries) data[currentJournal].entries={};
+  data[currentJournal].entries[selectedDate]={symbol,pnl,wins,losses,link};
+  saveData(); closeModal(); renderCalendar();
+}
+
+function deleteEntry(){
+  if(!selectedDate) return;
+  const entries=data[currentJournal].entries||{};
+  if(entries[selectedDate]){ delete entries[selectedDate]; saveData(); }
+  closeModal(); renderCalendar();
+}
+
+window.addEventListener('click', e=>{ if(e.target.id==='entryModal') closeModal(); });
+
+// ------------------ RENDER CALENDAR ------------------
+function renderCalendar(year = parseInt(yearSelect.value), month = parseInt(monthSelect.value)) {
+  calendar.innerHTML = "";
+  const firstDay = new Date(year, month, 1).getDay(); // 0 = Sun
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  // Weekday headers
+  const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  weekdays.forEach(day => {
+    const hd = document.createElement('div');
+    hd.className = 'day-header';
+    hd.textContent = day;
+    calendar.appendChild(hd);
+  });
+
+  // Leading empty cells
+  for(let i=0;i<firstDay;i++){
+    const empty = document.createElement('div');
+    empty.className='day empty';
+    calendar.appendChild(empty);
+  }
+
+  const entries = data[currentJournal].entries || {};
+  const today = new Date();
+
+  for(let d=1; d<=daysInMonth; d++){
+    const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entry = entries[dateKey] || {};
+    const adj = parseFloat(data[currentJournal].adjustments?.[dateKey] || 0);
+    const pnl = parseFloat(entry.pnl || 0);
+
+    const cell = document.createElement('div');
+    cell.className = 'day';
+    if(pnl>0) cell.classList.add('positive');
+    else if(pnl<0) cell.classList.add('negative');
+
+    // Highlight today
+    if(year===today.getFullYear() && month===today.getMonth() && d===today.getDate()){
+      const ring = document.createElement('div');
+      ring.className='today-ring';
+      cell.appendChild(ring);
+    }
+
+    // Day number
+    const strong = document.createElement('strong');
+    strong.textContent = d;
+    cell.appendChild(strong);
+
+    // Symbol
+    if(entry.symbol){
+      const sym = document.createElement('div');
+      sym.className='entry-symbol';
+      sym.textContent = entry.symbol;
+      if(entry.link && entry.link.startsWith('http')){
+        const a = document.createElement('a');
+        a.className='entry-link';
+        a.href = entry.link;
+        a.target='_blank';
+        a.textContent=' 🔗';
+        sym.appendChild(a);
+      }
+      cell.appendChild(sym);
+    }
+
+    // PnL
+    if(!isNaN(pnl) && pnl!==0){
+      const pnlDiv = document.createElement('div');
+      pnlDiv.className='entry-pnl';
+      pnlDiv.textContent=`$${pnl.toFixed(2)}`;
+      pnlDiv.style.color = pnl>=0?'lime':'red';
+      cell.appendChild(pnlDiv);
+    }
+
+    // Adjustments
+    if(!isNaN(adj) && adj!==0){
+      const adjDiv = document.createElement('div');
+      adjDiv.className='adj';
+      adjDiv.textContent = adj<0 ? `Withdraw: $${Math.abs(adj).toFixed(2)}` : `Deposit: $${adj.toFixed(2)}`;
+      cell.appendChild(adjDiv);
+    }
+
+    cell.onclick = () => {
+      selectedDate = dateKey;
+      document.getElementById('entrySymbol').value = entry.symbol || '';
+      document.getElementById('entryPnl').value = entry.pnl ?? '';
+      document.getElementById('entryWins').value = entry.wins ?? 0;
+      document.getElementById('entryLosses').value = entry.losses ?? 0;
+      document.getElementById('entryLink').value = entry.link || '';
+      openModal();
+    };
+
+    calendar.appendChild(cell);
+  }
+
+  renderOverview();
+  renderWeeklySummary();
+  updateHeaderBalances();
+}
+
+// ------------------ OVERVIEW ------------------
+function renderOverview(){
+  const entries = Object.entries(data[currentJournal].entries || {});
+  let balance = parseFloat(data[currentJournal].start || 0);
+  let wins=0, loss=0, totalTrades=0, best=-Infinity, worst=Infinity;
+
+  entries.forEach(([dateKey, e])=>{
+    const pnl = parseFloat(e.pnl || 0);
+    const adj = parseFloat(data[currentJournal].adjustments?.[dateKey] || 0);
+    balance += pnl + adj;
+    if(pnl>0) wins++;
+    if(pnl<0) loss++;
+    totalTrades += (e.wins || 0) + (e.losses || 0);
+    best = Math.max(best, pnl);
+    worst = Math.min(worst, pnl);
+  });
+
+  const winRate = (wins+loss)>0 ? ((wins/(wins+loss))*100).toFixed(2)+'%' : '0%';
+  overviewStats.innerHTML = `
+    <div>📊 <b>Balance:</b> <span class="${balance>=0?'positive':'negative'}">$${balance.toFixed(2)}</span></div>
+    <div>📈 <b>Total Trades:</b> ${totalTrades}</div>
+    <div>✅ <b>Winning Trades:</b> <span class="positive">${wins}</span></div>
+    <div>❌ <b>Losing Trades:</b> <span class="negative">${loss}</span></div>
+    <div>🏁 <b>Win Rate:</b> ${winRate}</div>
+    <div>🏆 <b>Best Day:</b> <span class="${best>=0?'positive':'negative'}">${best===-Infinity?'-':best}</span></div>
+    <div>💔 <b>Worst Day:</b> <span class="${worst<0?'negative':'positive'}">${worst===Infinity?'-':worst}</span></div>
+  `;
+}
+
+// ------------------ WEEKLY SUMMARY ------------------
+function renderWeeklySummary(){
+  compactWeekly.innerHTML='';
+  const entries=data[currentJournal].entries||{};
+  const year=parseInt(yearSelect.value);
+  const month=parseInt(monthSelect.value);
+  const startBal=parseFloat(data[currentJournal].start||0);
+  let weekPnL=0; let weekNo=1;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(year,month,d);
+    const dow=date.getDay();
+    const key=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const e=entries[key];
+    const pnl=parseFloat(e?.pnl||0);
+    if(!isNaN(pnl)) weekPnL+=pnl;
+
+    const isWeekEnd=(dow===0 && d!==1);
+    const isMonthEnd=(d===daysInMonth);
+
+    if(isWeekEnd || isMonthEnd){
+      const pct=startBal?((weekPnL/startBal)*100).toFixed(2):'0.00';
+      const chip=document.createElement('div');
+      chip.className=`chip ${weekPnL>=0?'positive':'negative'}`;
+      chip.textContent=`W${weekNo}: $${weekPnL.toFixed(2)} (${pct}%)`;
+      compactWeekly.appendChild(chip);
+      weekPnL=0; weekNo++;
+    }
+  }
+}
+
+// ------------------ HEADER BALANCES ------------------
+function updateHeaderBalances() {
+  const entries = data[currentJournal].entries || {};
+  const startBal = parseFloat(data[currentJournal].start || 0);
+  const year = parseInt(yearSelect.value);
+  const month = parseInt(monthSelect.value);
+
+  let monthlyPnl = 0;
+  let cumulativeBalance = startBal;
+
+  Object.keys(entries).forEach(dateKey => {
+    const entry = entries[dateKey];
+    const adj = parseFloat(data[currentJournal].adjustments?.[dateKey] || 0);
+    const pnl = parseFloat(entry.pnl || 0);
+    cumulativeBalance += pnl + adj;
+
+    if (dateKey.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)) {
+      monthlyPnl += pnl + adj;
+    }
+  });
+
+  // Include withdrawals in balance
+  const monthlyWithdrawals = withdrawals
+    .filter(w => {
+      const d = new Date(w.date);
+      return d.getFullYear() === year && d.getMonth() === month;
+    })
+    .reduce((sum,w)=>sum+w.amount,0);
+
+  cumulativeBalance -= monthlyWithdrawals;
+  monthlyPnl -= monthlyWithdrawals;
+
+  const gainPercent = startBal ? ((monthlyPnl/startBal)*100).toFixed(2) : '0.00';
+
+  document.getElementById('headerStartingBalance').textContent = startBal.toFixed(2);
+  document.getElementById('headerCurrentBalance').textContent = cumulativeBalance.toFixed(2);
+  document.getElementById('headerMonthlyPnl').textContent = `$${monthlyPnl.toFixed(2)}`;
+  document.getElementById('headerMonthlyGainPercent').textContent = `${gainPercent}%`;
+
+  const gainColor = monthlyPnl>0?'lightgreen': monthlyPnl<0?'salmon':'#e7e3e3';
+  document.getElementById('headerMonthlyPnl').style.color = gainColor;
+  document.getElementById('headerMonthlyGainPercent').style.color = gainColor;
+}
+
+// ------------------ WITHDRAWALS ------------------
+const withdrawInput=document.querySelector('input[placeholder="    Amount"]');
+const historyBtn=document.getElementById('historybtn');
+
+historyBtn.onclick=()=>{
+  renderHistory();
+  document.getElementById('historyModal').style.display='flex';
+};
+
+function closeHistoryModal(){ document.getElementById('historyModal').style.display='none'; }
+
+withdrawInput.addEventListener('keypress',e=>{
+  if(e.key==='Enter' && withdrawInput.value.trim()!==''){
     addWithdrawal(parseFloat(withdrawInput.value));
-    withdrawInput.value = '';
+    withdrawInput.value='';
   }
 });
 
@@ -966,36 +933,50 @@ function addWithdrawal(amount){
   withdrawals.push({ date: date.toLocaleDateString(), amount });
   localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
   renderHistory();
+  renderCalendar();
+  updateHeaderBalances();
 }
 
 function renderHistory(){
-  const container = document.getElementById('historyList');
-  container.innerHTML = '';
-  withdrawals.forEach((w, i) => {
-    const div = document.createElement('div');
-    div.className = 'history-item';
-    div.innerHTML = `
-      <span>${w.date}</span>
-      <span>$${w.amount.toFixed(2)}</span>
-      <button onclick="deleteWithdrawal(${i})">❌</button>
-    `;
+  const container=document.getElementById('historyList');
+  container.innerHTML='';
+  withdrawals.forEach((w,i)=>{
+    const div=document.createElement('div');
+    div.className='history-item';
+    div.innerHTML=`<span>${w.date}</span><span>$${w.amount.toFixed(2)}</span><button onclick="deleteWithdrawal(${i})">❌</button>`;
     container.appendChild(div);
   });
 }
 
 function deleteWithdrawal(index){
-  withdrawals.splice(index, 1);
-  localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+  withdrawals.splice(index,1);
+  localStorage.setItem('withdrawals',JSON.stringify(withdrawals));
   renderHistory();
+  renderCalendar();
+  updateHeaderBalances();
 }
 
-// Close modal when clicking outside
-window.addEventListener('click', (e) => {
-  if(e.target.id === 'historyModal') closeHistoryModal();
+window.addEventListener('click',e=>{
+  if(e.target.id==='historyModal') closeHistoryModal();
 });
 
+// ------------------ INIT ------------------
+function init(){
+  const now=new Date();
+  const year=now.getFullYear();
+  for(let y=year-5;y<=year+5;y++){
+    const opt=document.createElement('option'); opt.value=y; opt.textContent=y; yearSelect.appendChild(opt);
+  }
+  yearSelect.value=year; monthSelect.value=now.getMonth();
+  if(Object.keys(data).length===0) data['Main']={entries:{},start:0};
+  if(!data[currentJournal]) data[currentJournal]={entries:{},start:0};
+  updateJournalList(); renderCalendar();
+}
 init();
-  </script>
+</script>
+
+
+
 </body>
 </html>
 
