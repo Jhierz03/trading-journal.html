@@ -226,17 +226,22 @@ body {
 
 /* Sidebar collapse styles */
 .sidebar {
+  width: 250px;
   transition: transform 0.3s ease;
 }
 
 .sidebar.collapsed {
   transform: translateX(-100%);
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  z-index: 999;
-  background: var(--card);
+}
+
+
+.sidebar {
+  width: 250px;
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
 }
 
 .sidebar-toggle {
@@ -973,9 +978,18 @@ function init(){
   updateJournalList(); renderCalendar();
 }
 init();
+
+// ------------------ SIDEBAR TOGGLE ------------------
+const sidebar = document.querySelector('.sidebar');
+const toggleBtn = document.getElementById('sidebarToggle'); // ✅ fixed ID
+
+if (sidebar && toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    toggleBtn.textContent = sidebar.classList.contains('collapsed') ? '➡️' : '☰';
+  });
+}
 </script>
-
-
 
 </body>
 </html>
